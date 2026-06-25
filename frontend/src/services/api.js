@@ -1,17 +1,41 @@
-import axios from 'axios';
+import axios from 'axios'
 
-const api = axios.create({
+const instance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' }
-});
+})
 
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    const message = error.response?.data?.error || error.message || 'Unknown error';
-    return Promise.reject(new Error(message));
-  }
-);
+instance.interceptors.response.use(
+  res  => res.data,
+  err  => Promise.reject(new Error(err.response?.data?.error || err.message))
+)
 
-export default api;
+const api = {
+  health: () => instance.get('/health'),
+
+  prices: {
+    sync: () => instance.post('/prices/sync'),
+    list: (params) => instance.get('/prices', { params })
+  },
+
+  comparisons: {
+    list:     (params) => instance.get('/comparisons', { params }),
+    summary:  (params) => instance.get('/comparisons/summary', { params }),
+    bySymbol: (symbol) => instance.get(`/comparisons/${symbol}`)
+  },
+
+  alerts: {
+    list:        (params) => instance.get('/alerts', { params }),
+    acknowledge: (id, data) => instance.put(`/alerts/${id}/acknowledge`, data),
+    resolve:     (id, data) => instance.put(`/alerts/${id}/resolve`, data)
+  },
+
+  auditLogs: {
+    list: (params) => instance.get('/audit-logs', { params })
+  },
+
+  stats: () => instance.get('/stats')
+}
+
+export default api
