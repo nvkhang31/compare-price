@@ -95,7 +95,7 @@ export default function Comparisons() {
     date:           dayjs().format('YYYY-MM-DD'),
     symbol:         '',
     hasDiscrepancy: '',
-    exchange:       ''
+    exchange:       '' // 'HOSE' | 'HNX' | 'UPCOM' | 'VN30'
   })
 
   const load = useCallback(async (p = 1) => {
@@ -105,7 +105,11 @@ export default function Comparisons() {
       if (filters.date)           params.date           = filters.date
       if (filters.symbol)         params.symbol         = filters.symbol.toUpperCase()
       if (filters.hasDiscrepancy) params.hasDiscrepancy = filters.hasDiscrepancy
-      if (filters.exchange)       params.exchange       = filters.exchange
+      if (filters.exchange === 'VN30') {
+        params.vn30 = 'true'
+      } else if (filters.exchange) {
+        params.exchange = filters.exchange
+      }
 
       const res = await api.comparisons.list(params)
       setData(res.data)
@@ -154,6 +158,7 @@ export default function Comparisons() {
           <option value="HOSE">HOSE</option>
           <option value="HNX">HNX</option>
           <option value="UPCOM">UPCOM</option>
+          <option value="VN30">VN30</option>
         </select>
         <span className="text-sm text-gray-400 self-center">{total} kết quả</span>
         {sourcesAvailable.length > 0 && (
