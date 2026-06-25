@@ -1,83 +1,77 @@
 const StockPrice = require('../models/StockPrice');
 const Comparison = require('../models/Comparison');
 
-const FIELDS = ['ceilingPrice', 'floorPrice', 'referencePrice'];
+const COMPETITOR_SOURCES = ['vps', 'vndirect', 'tcbs'];
 
 class ComparisonService {
 
-  // So sánh 1 field giữa các nguồn
-  compareField(fieldName, values) {
-    const entries = Object.entries(values).filter(([, v]) => v != null);
-    if (entries.length < 2) {
-      return { field: fieldName, values, hasDiscrepancy: false, maxDifference: 0, maxDifferencePercent: 0 };
+  compareField(kisValue, sourceValue) {
+    if (kisValue == null || sourceValue == null) {
+      return { kisValue, sourceValue, diff: null, diffPct: null, match: null };
     }
-
-    const prices          = entries.map(([, v]) => v);
-    const minPrice        = Math.min(...prices);
-    const maxPrice        = Math.max(...prices);
-    const maxDifference   = maxPrice - minPrice;
-    const maxDifferencePercent = minPrice > 0
-      ? parseFloat(((maxDifference / minPrice) * 100).toFixed(4))
+    const diff    = sourceValue - kisValue;
+    const diffPct = kisValue > 0
+      ? parseFloat((Math.abs(diff) / kisValue * 100).toFixed(4))
       : 0;
-
-    return {
-      field: fieldName,
-      values,
-      hasDiscrepancy:      maxDifference > 0,
-      maxDifference,
-      maxDifferencePercent
-    };
+    return { kisValue, sourceValue, diff, diffPct, match: diff === 0 };
   }
 
-  // So sánh 1 symbol từ DB
+  // So sánh 1 symbol: KIS là tham chiếu, từng source khác so với KIS
   async compareSymbol(symbol, date) {
-    const [kisDoc, vndDoc, tcbsDoc] = await Promise.all([
-      StockPrice.findOne({ symbol, date, source: 'kis' }).lean(),
-      StockPrice.findOne({ symbol, date, source: 'vndirect' }).lean(),
-      StockPrice.findOne({ symbol, date, source: 'tcbs' }).lean()
-    ]);
+    const kisDoc = await StockPrice.findOne({ symbol, date, source: 'kis' }).lean();
+    if (!kisDoc) return null; // KIS bắt buộc phải có
 
-    // Cần ít nhất 2 nguồn mới so sánh có ý nghĩa
-    const availableSources = [kisDoc, vndDoc, tcbsDoc].filter(Boolean).length;
-    if (availableSources < 2) return null;
-
-    const discrepancies = FIELDS.map(field =>
-      this.compareField(field, {
-        ...(kisDoc  ? { kis:      kisDoc[field]  } : {}),
-        ...(vndDoc  ? { vndirect: vndDoc[field]  } : {}),
-        ...(tcbsDoc ? { tcbs:     tcbsDoc[field] } : {})
-      })
+    const competitorDocs = await Promise.all(
+      COMPETITOR_SOURCES.map(src =>
+        StockPrice.findOne({ symbol, date, source: src }).lean()
+      )
     );
 
-    const hasDiscrepancy   = discrepancies.some(d => d.hasDiscrepancy);
-    const discrepancyCount = discrepancies.filter(d => d.hasDiscrepancy).length;
+    const available = COMPETITOR_SOURCES
+      .map((src, i) => ({ src, doc: competitorDocs[i] }))
+      .filter(({ doc }) => doc != null);
 
-    const doc = {
+    if (!available.length) return null; // Cần ít nhất 1 source khác để so sánh
+
+    const comparisons = available.map(({ src, doc }) => {
+      const ceiling   = this.compareField(kisDoc.ceilingPrice,   doc.ceilingPrice);
+      const floor     = this.compareField(kisDoc.floorPrice,     doc.floorPrice);
+      const reference = this.compareField(kisDoc.referencePrice, doc.referencePrice);
+      const hasDiscrepancy = [ceiling, floor, reference].some(f => f.match === false);
+      return { source: src, ceiling, floor, reference, hasDiscrepancy };
+    });
+
+    const hasDiscrepancy    = comparisons.some(c => c.hasDiscrepancy);
+    const discrepantSources = comparisons.filter(c => c.hasDiscrepancy).map(c => c.source);
+
+    const record = {
       symbol,
       date,
-      exchange: kisDoc?.exchange || vndDoc?.exchange || tcbsDoc?.exchange || null,
-      kis:      kisDoc  ? { ceilingPrice: kisDoc.ceilingPrice,  floorPrice: kisDoc.floorPrice,  referencePrice: kisDoc.referencePrice  } : {},
-      vndirect: vndDoc  ? { ceilingPrice: vndDoc.ceilingPrice,  floorPrice: vndDoc.floorPrice,  referencePrice: vndDoc.referencePrice  } : {},
-      tcbs:     tcbsDoc ? { ceilingPrice: tcbsDoc.ceilingPrice, floorPrice: tcbsDoc.floorPrice, referencePrice: tcbsDoc.referencePrice } : {},
-      discrepancies,
+      exchange: kisDoc.exchange || null,
+      kisPrice: {
+        ceilingPrice:   kisDoc.ceilingPrice,
+        floorPrice:     kisDoc.floorPrice,
+        referencePrice: kisDoc.referencePrice
+      },
+      comparisons,
+      sourcesCompared:   available.map(({ src }) => src),
       hasDiscrepancy,
-      discrepancyCount,
+      discrepantSources,
       comparedAt: new Date()
     };
 
     await Comparison.findOneAndUpdate(
       { symbol, date },
-      { $set: doc },
+      { $set: record },
       { upsert: true }
     );
 
-    return doc;
+    return record;
   }
 
   // So sánh toàn bộ symbols cho 1 ngày
   async compareAll(date) {
-    // Lấy danh sách symbols có data trong ngày
-    const symbols = await StockPrice.distinct('symbol', { date });
+    const symbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
     if (!symbols.length) return { total: 0, compared: 0, withDiscrepancy: 0 };
 
     let compared        = 0;

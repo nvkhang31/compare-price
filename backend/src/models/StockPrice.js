@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const stockPriceSchema = new mongoose.Schema({
   symbol:         { type: String, required: true, uppercase: true, trim: true },
   date:           { type: String, required: true }, // YYYY-MM-DD
-  source:         { type: String, required: true, enum: ['kis', 'vndirect', 'tcbs'] },
+  source:         { type: String, required: true, enum: ['kis', 'vndirect', 'tcbs', 'vps'] },
   exchange:       { type: String, enum: ['HOSE', 'HNX', 'UPCOM'], default: null },
 
   ceilingPrice:   { type: Number, default: null },
