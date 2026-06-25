@@ -4,12 +4,12 @@
 
 ### Information Gathering (REQUIRED BEFORE CODING)
 
-- [ ] **iKIS API Details**
-  - API Endpoint URL: ___________
-  - Authentication Method: ___________
-  - API Key/Credentials: ___________
-  - Rate Limit: ___________
-  - Response Format Example: ___________
+- [x] **KIS WTS API Details**
+  - Static Data URL: `https://trading.kisvn.vn/files/resources/symbol_static_data.json?v=89-23b1f8f`
+  - Realtime URL: `https://trading.kisvn.vn/rest/api/v2/market/symbol/latest?symbolList={symbols}`
+  - Authentication Method: None required (Public API)
+  - Key fields: `ce` (Trần), `fl` (Sàn), `re` (Tham Chiếu), `s` (symbol), `m` (exchange)
+  - ⚠️ Note: Version param `?v=` may change on WTS redeploy — store in `.env`
 
 - [ ] **Project Configuration**
   - Deployment Environment: ___________

@@ -34,11 +34,14 @@
 
 ## 📊 Data Sources
 
-### 1. iKIS (Internal/Primary)
-- **Source:** iKIS internal system (API endpoint TBD)
-- **Data:** Ceiling Price, Floor Price, Reference Price
-- **Symbols:** All symbols listed on iKIS
-- **Update Frequency:** Daily (TBD timing)
+### 1. KIS WTS (Internal/Primary)
+- **Source:** KIS WTS public API — `trading.kisvn.vn`
+- **Batch Endpoint:** `GET /files/resources/symbol_static_data.json` — fields: `ce` (Trần), `fl` (Sàn), `re` (Tham Chiếu)
+- **Realtime Endpoint:** `GET /rest/api/v2/market/symbol/latest` — fields: OHLCV, order book
+- **Authentication:** None required ✅
+- **Symbols:** All STOCK symbols on HOSE, HNX, UPCOM
+- **Update Frequency:** Daily static data + real-time on-demand
+- **API Status:** ✅ Confirmed & Ready
 
 ### 2. VNDirect (Competitor/Verification)
 - **Source:** Public API - finfo-api.vndirect.com.vn
@@ -97,7 +100,7 @@ Scheduler: node-cron (Built-in task scheduling)
 │  └────────────────────────────────────┘ │
 │  ┌────────────────────────────────────┐ │
 │  │ Services (Business Logic)          │ │
-│  │ ├─ iKISService                     │ │
+│  │ ├─ KISService                      │ │
 │  │ ├─ VNDirectService                 │ │
 │  │ ├─ TCBSService                     │ │
 │  │ ├─ ComparisonService               │ │
@@ -125,10 +128,10 @@ Scheduler: node-cron (Built-in task scheduling)
          ▲            ▲            ▲
          │            │            │
     ┌────┴──┐    ┌────┴──┐    ┌───┴──┐
-    │ iKIS  │    │ VND   │    │ TCBS │
-    │ API   │    │ API   │    │ API  │
+    │  KIS  │    │ VND   │    │ TCBS │
+    │  WTS  │    │ API   │    │ API  │
     └───────┘    └───────┘    └──────┘
-    (Internal)  (Public)     (Public)
+    (Public)    (Public)     (Public)
 ```
 
 ---
@@ -172,8 +175,8 @@ Scheduler: node-cron (Built-in task scheduling)
   date: ISODate("2024-06-23"),
   exchange: "HOSE",
   
-  // Source 1: iKIS
-  ikis: {
+  // Source 1: KIS WTS
+  kis: {
     ceilingPrice: 33700,
     floorPrice: 29300,
     referencePrice: 31500
@@ -198,7 +201,7 @@ Scheduler: node-cron (Built-in task scheduling)
     {
       field: "ceilingPrice",
       values: {
-        ikis: 33700,
+        kis: 33700,
         vndirect: 33700,
         tcbs: 33750
       },
@@ -230,7 +233,7 @@ Scheduler: node-cron (Built-in task scheduling)
   
   // Values involved
   sources: {
-    ikis: 33700,
+    kis: 33700,
     vndirect: 33700,
     tcbs: 33750
   },
@@ -566,9 +569,8 @@ MONGODB_USER=admin
 MONGODB_PASSWORD=secret
 
 # APIs
-IKIS_API_URL=https://api.ikis.com.vn/...
-IKIS_API_KEY=xxx
-IKIS_API_SECRET=xxx
+KIS_STATIC_DATA_URL=https://trading.kisvn.vn/files/resources/symbol_static_data.json?v=89-23b1f8f
+KIS_API_BASE_URL=https://trading.kisvn.vn
 
 VNDIRECT_API_URL=https://finfo-api.vndirect.com.vn
 VNDIRECT_API_TIMEOUT=10000

@@ -1,4 +1,4 @@
-# 🔌 API INTEGRATION GUIDE - iKIS, VNDirect, TCBS
+# 🔌 API INTEGRATION GUIDE - KIS WTS, VNDirect, TCBS
 
 ## Overview
 
@@ -6,107 +6,179 @@ This document specifies how to integrate with all three price data sources.
 
 ---
 
-## 1. iKIS API (Internal/Primary Source)
+## 1. KIS WTS API (Primary Source)
 
-### Status: ⚠️ PENDING
-**Note:** iKIS API endpoint details need to be provided by the iKIS team.
+### Status: ✅ CONFIRMED & READY
 
-### Required Information (TBD)
+### Base URL
 ```
-- API Base URL: ?
-- Authentication Method: API Key? OAuth? JWT?
-- Endpoint for getting all symbols: ?
-- Endpoint for getting prices: ?
-- Rate limit: ? requests per minute
-- Real-time capable: WebSocket? Long polling? REST only?
-- Fields returned: ceiling, floor, reference, OHLCV?
-- Update frequency: Daily? Intraday?
-- Error handling: Retry policy?
+https://trading.kisvn.vn
 ```
 
-### Template Service Structure (Placeholder)
+### No Authentication Required ✅
+
+---
+
+### Endpoint 1: Static Symbol Data (Daily Batch) — **MAIN ENDPOINT**
+
+**URL:**
+```
+GET https://trading.kisvn.vn/files/resources/symbol_static_data.json?v={version}
+```
+
+**Current Version:** `v=89-23b1f8f`
+
+> ⚠️ **Note:** The `v=` parameter is a cache-busting version tied to the WTS deployment. It may change when WTS is updated. Monitor this URL periodically or fetch the WTS homepage to extract the latest version dynamically.
+
+**Response Structure (per item):**
+```json
+{
+  "s":      "ACB",        // Symbol
+  "m":      "HOSE",       // Exchange: HOSE | HNX | UPCOM
+  "n1":     "ACB",        // Short name
+  "n2":     "Ngân hàng TMCP Á Châu", // Full name
+  "t":      "STOCK",      // Type: STOCK | FUTURES | ETF | BOND
+  "status": "Listed",     // Listed status
+  "re":     31500.0,      // 🎯 Giá Tham Chiếu (Reference Price)
+  "ce":     33700.0,      // 🎯 Giá Trần (Ceiling Price)
+  "fl":     29300.0,      // 🎯 Giá Sàn (Floor Price)
+  "pc":     31500.0,      // Previous Close
+  "ls":     1             // Lot size
+}
+```
+
+**Use case:** Daily batch sync — fetch all symbols and their ceiling/floor/reference prices in a single request (~391KB for ~3000+ symbols).
+
+---
+
+### Endpoint 2: Latest Market Data (Real-time)
+
+**URL:**
+```
+GET https://trading.kisvn.vn/rest/api/v2/market/symbol/latest?symbolList={symbols}
+```
+
+**Example:**
+```
+GET https://trading.kisvn.vn/rest/api/v2/market/symbol/latest?symbolList=ACB,VCB,VNM
+```
+
+**Response Structure (per item):**
+```json
+{
+  "s":   "ACB",        // Symbol
+  "t":   "STOCK",      // Type
+  "o":   22000.0,      // Open price
+  "h":   22850.0,      // High (intraday high, NOT ceiling)
+  "l":   21900.0,      // Low (intraday low, NOT floor)
+  "c":   22350.0,      // Current/Close price
+  "a":   22433.13,     // Average price
+  "ch":  350.0,        // Price change
+  "ra":  1.59,         // % change
+  "vo":  22597900,     // Volume
+  "va":  506829575000, // Trading value
+  "mb":  "ASK",        // Market status
+  "bb": [              // Best Bid (3 levels)
+    { "p": 22350.0, "v": 23700, "c": 0 }
+  ],
+  "bo": [              // Best Offer/Ask (3 levels)
+    { "p": 22400.0, "v": 150700, "c": 0 }
+  ],
+  "fr": {              // Foreign room
+    "bv": 4452293, "sv": 2871943
+  }
+}
+```
+
+> ⚠️ **Note:** This endpoint does NOT return ceiling/floor/reference prices. Use `symbol_static_data.json` for those. This endpoint is for real-time OHLCV and order book data.
+
+**Use case:** Real-time polling — check current prices and market status.
+
+---
+
+### Service Implementation
+
 ```javascript
-// backend/src/services/ikisService.js
+// backend/src/services/kisService.js
 
 const axios = require('axios');
 
-class IKISService {
+class KISService {
   constructor() {
-    this.baseURL = process.env.IKIS_API_URL;
-    this.apiKey = process.env.IKIS_API_KEY;
+    this.baseURL = 'https://trading.kisvn.vn';
+    this.staticDataURL = process.env.KIS_STATIC_DATA_URL ||
+      'https://trading.kisvn.vn/files/resources/symbol_static_data.json?v=89-23b1f8f';
     this.timeout = 30000;
   }
 
-  // Get all symbols
-  async getSymbols() {
-    try {
-      const response = await axios.get(`${this.baseURL}/symbols`, {
-        headers: { 'Authorization': `Bearer ${this.apiKey}` },
-        timeout: this.timeout
-      });
-      return response.data.data;
-    } catch (error) {
-      throw new Error(`iKIS getSymbols failed: ${error.message}`);
-    }
-  }
-
-  // Get prices for all symbols
+  // Get all symbols with ceiling/floor/reference prices (daily batch)
   async getAllPrices() {
     try {
-      const response = await axios.get(`${this.baseURL}/prices`, {
-        headers: { 'Authorization': `Bearer ${this.apiKey}` },
-        timeout: this.timeout
+      const response = await axios.get(this.staticDataURL, {
+        timeout: this.timeout,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
       });
-      return response.data.data;
+
+      const data = response.data;
+      // Filter only STOCK type with Listed status
+      return data.filter(item => item.t === 'STOCK' && item.status === 'Listed');
     } catch (error) {
-      throw new Error(`iKIS getAllPrices failed: ${error.message}`);
+      throw new Error(`KIS getAllPrices failed: ${error.message}`);
     }
   }
 
-  // Get price for specific symbol
-  async getPriceBySymbol(symbol) {
+  // Get real-time latest data for specific symbols
+  async getLatestPrices(symbols) {
     try {
-      const response = await axios.get(`${this.baseURL}/prices/${symbol}`, {
-        headers: { 'Authorization': `Bearer ${this.apiKey}` },
-        timeout: this.timeout
-      });
-      return response.data.data;
+      const symbolList = Array.isArray(symbols) ? symbols.join(',') : symbols;
+      const response = await axios.get(
+        `${this.baseURL}/rest/api/v2/market/symbol/latest`,
+        {
+          params: { symbolList },
+          timeout: this.timeout,
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        }
+      );
+      return response.data || [];
     } catch (error) {
-      throw new Error(`iKIS getPriceBySymbol(${symbol}) failed: ${error.message}`);
+      throw new Error(`KIS getLatestPrices failed: ${error.message}`);
     }
   }
 
-  // Transform iKIS response to standard format
-  transformPrice(ikisPrice) {
+  // Transform static data response to standard format
+  transformPrice(kisItem) {
     return {
-      symbol: ikisPrice.symbol,
-      exchange: ikisPrice.exchange,
-      ceilingPrice: ikisPrice.ceiling || ikisPrice.ceilingPrice,
-      floorPrice: ikisPrice.floor || ikisPrice.floorPrice,
-      referencePrice: ikisPrice.reference || ikisPrice.refPrice,
-      openPrice: ikisPrice.open || null,
-      highPrice: ikisPrice.high || null,
-      lowPrice: ikisPrice.low || null,
-      closePrice: ikisPrice.close || null,
-      volume: ikisPrice.vol || null,
-      value: ikisPrice.val || null,
-      lastUpdated: new Date(ikisPrice.timestamp),
-      source: 'ikis'
+      symbol: kisItem.s,
+      exchange: kisItem.m,
+      name: kisItem.n2 || kisItem.n1,
+      type: kisItem.t,
+      ceilingPrice: kisItem.ce,
+      floorPrice: kisItem.fl,
+      referencePrice: kisItem.re,
+      previousClose: kisItem.pc,
+      lotSize: kisItem.ls,
+      lastUpdated: new Date(),
+      source: 'kis'
     };
   }
 }
 
-module.exports = new IKISService();
+module.exports = new KISService();
 ```
 
-### Implementation Steps (Once API details provided)
-1. Get API credentials from iKIS team
-2. Update .env with IKIS_API_URL, IKIS_API_KEY
-3. Implement authentication method
-4. Test symbol retrieval
-5. Test price retrieval
-6. Implement error handling & retries
-7. Integrate into daily sync scheduler
+### .env Variables
+```
+KIS_STATIC_DATA_URL=https://trading.kisvn.vn/files/resources/symbol_static_data.json?v=89-23b1f8f
+KIS_API_BASE_URL=https://trading.kisvn.vn
+```
+
+### Implementation Steps
+1. Add `KIS_STATIC_DATA_URL` to `.env`
+2. Implement `KISService` with `getAllPrices()` and `transformPrice()`
+3. Test fetching all symbols with `curl https://trading.kisvn.vn/files/resources/symbol_static_data.json?v=89-23b1f8f | jq '.[0:3]'`
+4. Filter by `t === "STOCK"` and `status === "Listed"` to exclude futures/bonds
+5. Integrate into daily sync scheduler at 15:30
+6. Monitor version parameter — update `KIS_STATIC_DATA_URL` if WTS is redeployed
 
 ---
 
