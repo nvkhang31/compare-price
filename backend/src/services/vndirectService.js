@@ -58,6 +58,17 @@ class VNDirectService {
   }
 
   async syncPrices(date) {
+    // Probe with short timeout — fail fast if proxy blocks VNDirect
+    try {
+      await axios.get(`${this.baseURL}/v4/stock_prices/`, {
+        params: { q: `date:${date}`, size: 1, page: 1 },
+        timeout: 5000,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+    } catch (probeErr) {
+      throw new Error(`VNDirect endpoint unavailable: ${probeErr.message}`);
+    }
+
     const raw = await this.fetchAllPrices(date);
     if (!raw.length) return { total: 0, upserted: 0, modified: 0 };
 

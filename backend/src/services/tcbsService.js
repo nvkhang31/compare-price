@@ -65,6 +65,16 @@ class TCBSService {
   async syncPrices(date, symbols) {
     if (!symbols || !symbols.length) return { total: 0, upserted: 0, modified: 0 };
 
+    // Probe with 1 symbol to fast-fail if TCBS endpoint is down
+    try {
+      await axios.get(`${this.baseURL}/tcanalysis/v1/ticker/${symbols[0]}/overview`, {
+        timeout: 5000,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+    } catch (probeErr) {
+      throw new Error(`TCBS endpoint unavailable: ${probeErr.message}`);
+    }
+
     const raw  = await this.fetchAllPrices(symbols);
     if (!raw.length) return { total: 0, upserted: 0, modified: 0 };
 

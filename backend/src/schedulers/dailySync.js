@@ -3,6 +3,7 @@ const StockPrice       = require('../models/StockPrice');
 const Comparison       = require('../models/Comparison');
 const AuditLog         = require('../models/AuditLog');
 const kisService       = require('../services/kisService');
+const vpsService       = require('../services/vpsService');
 const vndirectService  = require('../services/vndirectService');
 const tcbsService      = require('../services/tcbsService');
 const comparisonService = require('../services/comparisonService');
@@ -17,7 +18,7 @@ function buildCronExpression(timeStr) {
 async function runDailySync() {
   const date      = new Date().toISOString().split('T')[0];
   const startTime = Date.now();
-  const summary   = { date, kis: null, vndirect: null, tcbs: null, comparison: null, alerts: 0 };
+  const summary   = { date, kis: null, vps: null, vndirect: null, tcbs: null, comparison: null, alerts: 0 };
 
   console.log(`[DailySync] Starting for ${date}...`);
 
@@ -37,7 +38,17 @@ async function runDailySync() {
     console.error(`[DailySync] KIS failed:`, e.message);
   }
 
-  // 2. VNDirect
+  // 2. VPS — dùng symbols từ KIS làm danh sách
+  try {
+    const symbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
+    summary.vps   = await vpsService.syncPrices(date, symbols);
+    console.log(`[DailySync] VPS done:`, summary.vps);
+  } catch (e) {
+    summary.vps = { error: e.message };
+    console.error(`[DailySync] VPS failed:`, e.message);
+  }
+
+  // 3. VNDirect
   try {
     summary.vndirect = await vndirectService.syncPrices(date);
     console.log(`[DailySync] VNDirect done:`, summary.vndirect);
@@ -46,7 +57,7 @@ async function runDailySync() {
     console.error(`[DailySync] VNDirect failed:`, e.message);
   }
 
-  // 3. TCBS — lấy symbols từ KIS đã sync
+  // 4. TCBS — lấy symbols từ KIS đã sync
   try {
     const symbols    = await StockPrice.distinct('symbol', { date, source: 'kis' });
     summary.tcbs     = await tcbsService.syncPrices(date, symbols);
@@ -56,7 +67,7 @@ async function runDailySync() {
     console.error(`[DailySync] TCBS failed:`, e.message);
   }
 
-  // 4. Comparison
+  // 5. Comparison
   try {
     summary.comparison = await comparisonService.compareAll(date);
     console.log(`[DailySync] Comparison done:`, summary.comparison);
@@ -65,7 +76,7 @@ async function runDailySync() {
     console.error(`[DailySync] Comparison failed:`, e.message);
   }
 
-  // 5. Alerts
+  // 6. Alerts
   try {
     if (summary.comparison?.withDiscrepancy > 0) {
       const discrepant  = await Comparison.find({ date, hasDiscrepancy: true }).lean();
