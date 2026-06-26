@@ -58,11 +58,11 @@ class VNDirectService {
   }
 
   async syncPrices(date) {
-    // Probe with short timeout — fail fast if proxy blocks VNDirect
+    // Probe — fail fast nếu proxy block, cho thêm thời gian nếu server chậm
     try {
       await axios.get(`${this.baseURL}/v4/stock_prices/`, {
         params: { q: `date:${date}`, size: 1, page: 1 },
-        timeout: 5000,
+        timeout: 20000,
         headers: { 'User-Agent': 'Mozilla/5.0' }
       });
     } catch (probeErr) {
