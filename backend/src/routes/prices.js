@@ -73,4 +73,42 @@ async function runSync(date) {
   console.log('[SyncRoute] Done:', JSON.stringify({ kis: summary.kis, vps: summary.vps, comparison: summary.comparison }));
 }
 
+// POST /api/prices/test-alert — inject discrepancy giả để test alert system
+// Dùng trong dev, xóa sau khi xác nhận alert hoạt động
+router.post('/test-alert', async (req, res, next) => {
+  try {
+    const date   = new Date().toISOString().split('T')[0];
+    const symbol = (req.body.symbol || 'ACB').toUpperCase();
+
+    // Lấy giá KIS thật
+    const kisDoc = await StockPrice.findOne({ symbol, date, source: 'kis' }).lean();
+    if (!kisDoc) return res.status(404).json({ success: false, error: `No KIS data for ${symbol} on ${date}` });
+
+    // Tạo VPS record với giá trần sai lệch +2%
+    const fakeVps = {
+      ...kisDoc,
+      _id:           undefined,
+      source:        'vps',
+      ceilingPrice:  Math.round(kisDoc.ceilingPrice * 1.02), // +2% — vượt WARNING threshold (1%)
+      syncedAt:      new Date()
+    };
+    await StockPrice.findOneAndUpdate(
+      { symbol, date, source: 'vps' },
+      { $set: fakeVps },
+      { upsert: true }
+    );
+
+    // Chạy comparison cho symbol này
+    const comparison = await comparisonService.compareSymbol(symbol, date);
+
+    // Tạo alert
+    let alerts = 0;
+    if (comparison?.hasDiscrepancy) {
+      alerts = await alertService.processAll([comparison]);
+    }
+
+    res.json({ success: true, symbol, fakeVpsCeiling: fakeVps.ceilingPrice, kisValue: kisDoc.ceilingPrice, hasDiscrepancy: comparison?.hasDiscrepancy, alertsCreated: alerts });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

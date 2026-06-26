@@ -54,7 +54,8 @@ export default function Alerts() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
-  const fieldLabel = { ceilingPrice: 'Giá Trần', floorPrice: 'Giá Sàn', referencePrice: 'Giá TC' }
+  const fieldLabel  = { ceilingPrice: 'Giá Trần', floorPrice: 'Giá Sàn', referencePrice: 'Giá TC' }
+  const sourceLabel = { vps: 'VPS', vndirect: 'VNDirect', tcbs: 'TCBS' }
 
   return (
     <div className="space-y-4">
@@ -107,7 +108,7 @@ export default function Alerts() {
 
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                 <div>
-                  <p className="text-gray-500">Loại</p>
+                  <p className="text-gray-500">Loại giá</p>
                   <p className="font-medium">{fieldLabel[alert.discrepancyType] ?? alert.discrepancyType}</p>
                 </div>
                 <div>
@@ -116,21 +117,11 @@ export default function Alerts() {
                 </div>
                 <div>
                   <p className="text-gray-500">KIS</p>
-                  <p className="font-medium">{alert.sources?.kis?.toLocaleString('vi-VN') ?? '—'}</p>
+                  <p className="font-medium">{alert.sources?.kisValue?.toLocaleString('vi-VN') ?? '—'}</p>
                 </div>
-                <div className="flex gap-2">
-                  {alert.sources?.vndirect != null && (
-                    <div>
-                      <p className="text-gray-500">VNDirect</p>
-                      <p className="font-medium">{alert.sources.vndirect.toLocaleString('vi-VN')}</p>
-                    </div>
-                  )}
-                  {alert.sources?.tcbs != null && (
-                    <div>
-                      <p className="text-gray-500">TCBS</p>
-                      <p className="font-medium">{alert.sources.tcbs.toLocaleString('vi-VN')}</p>
-                    </div>
-                  )}
+                <div>
+                  <p className="text-gray-500">{sourceLabel[alert.sources?.source] ?? alert.sources?.source ?? '—'}</p>
+                  <p className="font-medium text-red-600">{alert.sources?.sourceValue?.toLocaleString('vi-VN') ?? '—'}</p>
                 </div>
               </div>
 

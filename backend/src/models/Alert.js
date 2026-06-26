@@ -11,18 +11,19 @@ const alertSchema = new mongoose.Schema({
   differenceAmount:  { type: Number, default: 0 },
   differencePercent: { type: Number, default: 0 },
 
+  // KIS-centric: lưu source nào chênh với KIS
   sources: {
-    kis:      { type: Number, default: null },
-    vndirect: { type: Number, default: null },
-    tcbs:     { type: Number, default: null }
+    source:      { type: String, default: null }, // 'vps' | 'vndirect' | 'tcbs'
+    kisValue:    { type: Number, default: null },
+    sourceValue: { type: Number, default: null }
   },
 
   status:           { type: String, enum: ['open', 'acknowledged', 'resolved'], default: 'open' },
 
   acknowledgedBy:   { type: String, default: null },
-  acknowledgedAt:   { type: Date, default: null },
+  acknowledgedAt:   { type: Date,   default: null },
   resolvedBy:       { type: String, default: null },
-  resolvedAt:       { type: Date, default: null },
+  resolvedAt:       { type: Date,   default: null },
   resolution:       { type: String, default: null },
 
   createdAt:        { type: Date, default: Date.now }
@@ -31,5 +32,6 @@ const alertSchema = new mongoose.Schema({
 alertSchema.index({ status: 1, severity: 1 });
 alertSchema.index({ symbol: 1, date: 1 });
 alertSchema.index({ createdAt: -1 });
+alertSchema.index({ 'sources.source': 1 });
 
 module.exports = mongoose.model('Alert', alertSchema);
