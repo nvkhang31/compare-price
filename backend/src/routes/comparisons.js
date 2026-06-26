@@ -4,10 +4,18 @@ const Comparison = require('../models/Comparison');
 const StockPrice = require('../models/StockPrice');
 
 // Danh sách VN30 (cập nhật theo kỳ review của HoSE)
+// VN30 cập nhật tháng 6/2026 (nguồn: HOSE)
 const VN30_SYMBOLS = [
-  'ACB','BCM','BID','BVH','CTG','FPT','GAS','GVR','HDB','HPG',
-  'MBB','MSN','MWG','NVL','PDR','PLX','POW','SAB','SHB','SSI',
-  'STB','TCB','TPB','VCB','VHM','VIB','VIC','VJC','VNM','VPB'
+  // Ngân hàng (14)
+  'ACB','BID','CTG','HDB','LPB','MBB','SHB','SSB','STB','TCB','TPB','VCB','VIB','VPB',
+  // Bất động sản & Dịch vụ (4)
+  'VIC','VHM','VRE','VPL',
+  // Tiêu dùng & Công nghệ (5)
+  'FPT','MSN','MWG','SAB','VNM',
+  // Năng lượng & Tài nguyên (5)
+  'GAS','GVR','HPG','PLX','DGC',
+  // Tài chính & Hàng không (2)
+  'SSI','VJC'
 ];
 
 // GET /api/comparisons?date=2026-06-25&hasDiscrepancy=true&exchange=HOSE&vn30=true&symbol=ACB&limit=100&page=1
