@@ -6,6 +6,7 @@ const PAGE_SIZE = 50
 
 const SOURCE_LABELS = {
   vps:      'VPS',
+  kbs:      'KBS',
   vndirect: 'VNDirect',
   tcbs:     'TCBS'
 }

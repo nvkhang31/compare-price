@@ -1,7 +1,7 @@
 const StockPrice = require('../models/StockPrice');
 const Comparison = require('../models/Comparison');
 
-const COMPETITOR_SOURCES = ['vps', 'vndirect', 'tcbs'];
+const COMPETITOR_SOURCES = ['vps', 'kbs', 'vndirect', 'tcbs'];
 
 class ComparisonService {
 
