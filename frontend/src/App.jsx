@@ -8,9 +8,9 @@ import AuditLog from './pages/AuditLog'
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <main className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard"   element={<Dashboard />} />
