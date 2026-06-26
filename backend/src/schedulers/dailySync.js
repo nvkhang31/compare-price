@@ -78,7 +78,8 @@ async function runDailySync() {
     console.error(`[DailySync] TCBS failed:`, e.message);
   }
 
-  // 6. Comparison
+  // 6. Comparison — delay 3s để đảm bảo tất cả bulk writes đã được index trên Atlas
+  await new Promise(r => setTimeout(r, 3000));
   try {
     summary.comparison = await comparisonService.compareAll(date);
     console.log(`[DailySync] Comparison done:`, summary.comparison);
