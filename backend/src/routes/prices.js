@@ -30,13 +30,14 @@ router.post('/sync', async (req, res, next) => {
   try {
     const date = new Date().toISOString().split('T')[0];
     await AuditLog.create({ action: 'manual_sync_triggered', status: 'success', details: { date }, triggeredBy: 'api' });
-
-    // Respond immediately so the HTTP request doesn't timeout
     res.json({ success: true, message: 'Sync started', date, note: 'Check /api/audit-logs for results' });
+  } catch (err) {
+    return next(err);
+  }
 
-    // Run sync in background (dùng runDailySync để luôn đồng bộ với scheduler)
-    runDailySync().catch(err => console.error('[SyncRoute] Unhandled error:', err.message));
-  } catch (err) { next(err); }
+  // Gọi NGOÀI try-catch để lỗi không bị Express nuốt sau khi res đã gửi
+  console.log('[SyncRoute] Triggering runDailySync, type:', typeof runDailySync);
+  runDailySync().catch(err => console.error('[SyncRoute] runDailySync failed:', err.message));
 });
 
 
