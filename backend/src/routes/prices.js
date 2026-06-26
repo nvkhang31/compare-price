@@ -2,13 +2,10 @@ const express          = require('express');
 const router           = express.Router();
 const StockPrice       = require('../models/StockPrice');
 const AuditLog         = require('../models/AuditLog');
-const kisService       = require('../services/kisService');
-const vpsService       = require('../services/vpsService');
-const vndirectService  = require('../services/vndirectService');
-const tcbsService      = require('../services/tcbsService');
 const comparisonService = require('../services/comparisonService');
 const alertService     = require('../services/alertService');
 const Comparison       = require('../models/Comparison');
+const { runDailySync } = require('../schedulers/dailySync');
 
 // GET /api/prices?symbol=ACB&source=kis&date=2026-06-25
 router.get('/', async (req, res, next) => {
@@ -37,41 +34,11 @@ router.post('/sync', async (req, res, next) => {
     // Respond immediately so the HTTP request doesn't timeout
     res.json({ success: true, message: 'Sync started', date, note: 'Check /api/audit-logs for results' });
 
-    // Run sync in background
-    runSync(date).catch(err => console.error('[SyncRoute] Unhandled error:', err.message));
+    // Run sync in background (dùng runDailySync để luôn đồng bộ với scheduler)
+    runDailySync().catch(err => console.error('[SyncRoute] Unhandled error:', err.message));
   } catch (err) { next(err); }
 });
 
-async function runSync(date) {
-  const summary = { date, kis: null, vps: null, vndirect: null, tcbs: null, comparison: null, alerts: 0 };
-
-  try { summary.kis = await kisService.syncPrices(date); }
-  catch (e) { summary.kis = { error: e.message }; }
-
-  try {
-    const symbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
-    summary.vps   = await vpsService.syncPrices(date, symbols);
-  } catch (e) { summary.vps = { error: e.message }; }
-
-  try { summary.vndirect = await vndirectService.syncPrices(date); }
-  catch (e) { summary.vndirect = { error: e.message }; }
-
-  try {
-    const symbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
-    summary.tcbs  = await tcbsService.syncPrices(date, symbols);
-  } catch (e) { summary.tcbs = { error: e.message }; }
-
-  try {
-    summary.comparison = await comparisonService.compareAll(date);
-    if (summary.comparison.withDiscrepancy > 0) {
-      const discrepant = await Comparison.find({ date, hasDiscrepancy: true }).lean();
-      summary.alerts   = await alertService.processAll(discrepant);
-    }
-  } catch (e) { summary.comparison = { error: e.message }; }
-
-  await AuditLog.create({ action: 'daily_sync_completed', status: 'success', details: summary, triggeredBy: 'api' });
-  console.log('[SyncRoute] Done:', JSON.stringify({ kis: summary.kis, vps: summary.vps, comparison: summary.comparison }));
-}
 
 // POST /api/prices/test-alert — inject discrepancy giả để test alert system
 // Dùng trong dev, xóa sau khi xác nhận alert hoạt động
