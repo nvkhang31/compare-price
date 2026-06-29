@@ -1,0 +1,26 @@
+name: Keep Render alive
+
+on:
+  schedule:
+    # Ping every 10 minutes, Mon–Fri only (server chỉ cần sống trong giờ hành chính ICT)
+    # GitHub Actions cron chạy theo UTC — ICT = UTC+7
+    # 00:00–11:00 UTC = 07:00–18:00 ICT (Mon–Fri)
+    - cron: '*/10 0-11 * * 1-5'
+  workflow_dispatch: # Cho phép trigger thủ công từ GitHub UI
+
+jobs:
+  ping:
+    name: Ping health endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render backend
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            https://compare-price-lel6.onrender.com/api/health)
+          echo "HTTP status: $response"
+          if [ "$response" != "200" ]; then
+            echo "Health check failed with status $response"
+            exit 1
+          fi
+          echo "Server is alive"
