@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import {
@@ -9,7 +9,9 @@ import {
   ChevronRight,
   CheckCircle2,
   Clock,
-  ShieldAlert
+  ShieldAlert,
+  X,
+  AlertTriangle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Select, SelectOption } from '@/components/ui/Select'
@@ -32,6 +34,193 @@ const SEVERITY_BG = {
 
 const SOURCE_LABELS = { vps: 'VPS', kbs: 'KBS', vndirect: 'VNDirect', tcbs: 'TCBS' }
 
+// ─── Toast Notification ───────────────────────────────────────────────────────
+function Toast({ message, onClose }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+
+  return (
+    <div className="fixed top-5 right-5 z-[60] animate-in slide-in-from-right-4 fade-in duration-300">
+      <div className="flex items-center gap-3 bg-white border border-green-200 shadow-lg rounded-xl px-4 py-3 min-w-[260px] max-w-sm">
+        <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+          <CheckCircle2 size={15} className="text-green-600" strokeWidth={2.5} />
+        </div>
+        <p className="text-sm text-gray-700 font-medium flex-1">{message}</p>
+        <button
+          onClick={onClose}
+          className="text-gray-300 hover:text-gray-500 transition-colors shrink-0"
+        >
+          <X size={14} strokeWidth={2} />
+        </button>
+      </div>
+      {/* Progress bar */}
+      <div className="mt-1 mx-1 h-0.5 bg-green-100 rounded-full overflow-hidden">
+        <div className="h-full bg-green-400 rounded-full animate-[shrink_3s_linear_forwards]" />
+      </div>
+    </div>
+  )
+}
+
+// ─── Reusable Modal Shell ─────────────────────────────────────────────────────
+function Modal({ open, onClose, children }) {
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-150">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ─── Acknowledge Confirmation Modal ──────────────────────────────────────────
+function AcknowledgeModal({ open, symbol, onClose, onConfirm, loading }) {
+  const { t } = useTranslation()
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center shrink-0">
+            <Clock size={18} className="text-amber-500" strokeWidth={2} />
+          </div>
+          <h2 className="text-base font-semibold text-gray-900">{t('alerts.ackModalTitle')}</h2>
+        </div>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors mt-0.5">
+          <X size={18} strokeWidth={2} />
+        </button>
+      </div>
+
+      <div className="px-6 py-5 space-y-3">
+        <p
+          className="text-sm text-gray-600 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: t('alerts.ackModalBody', { symbol }) }}
+        />
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2.5">
+          <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2} />
+          <p className="text-xs text-amber-700">{t('alerts.ackModalNote')}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 px-6 pb-5">
+        <button
+          onClick={onClose}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+        >
+          {t('alerts.cancel')}
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-50 transition-colors flex items-center gap-1.5"
+        >
+          <Clock size={13} strokeWidth={2} />
+          {loading ? t('alerts.processing') : t('alerts.confirmAck')}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Resolve Modal ────────────────────────────────────────────────────────────
+function ResolveModal({ open, symbol, onClose, onConfirm, loading }) {
+  const { t } = useTranslation()
+  const [note, setNote]       = useState('')
+  const [error, setError]     = useState(false)
+  const textareaRef           = useRef(null)
+
+  useEffect(() => {
+    if (open) {
+      setNote('')
+      setError(false)
+      setTimeout(() => textareaRef.current?.focus(), 50)
+    }
+  }, [open])
+
+  const handleConfirm = () => {
+    if (!note.trim()) { setError(true); return }
+    onConfirm(note.trim())
+  }
+
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
+            <CheckCircle2 size={18} className="text-green-500" strokeWidth={2} />
+          </div>
+          <h2 className="text-base font-semibold text-gray-900">{t('alerts.resolveModalTitle')}</h2>
+        </div>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors mt-0.5">
+          <X size={18} strokeWidth={2} />
+        </button>
+      </div>
+
+      <div className="px-6 py-5 space-y-3">
+        <p
+          className="text-sm text-gray-600"
+          dangerouslySetInnerHTML={{ __html: t('alerts.resolveModalBody', { symbol }) }}
+        />
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            {t('alerts.resolveLabel')}
+            <span className="text-red-400 ml-0.5">*</span>
+          </label>
+          <textarea
+            ref={textareaRef}
+            value={note}
+            onChange={e => { setNote(e.target.value); if (error) setError(false) }}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleConfirm() }}
+            placeholder={t('alerts.resolvePlaceholder')}
+            rows={3}
+            className={cn(
+              'w-full text-sm border rounded-lg px-3 py-2.5 resize-none transition-all focus:outline-none',
+              error
+                ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100'
+                : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-green-400 focus:ring-2 focus:ring-green-100'
+            )}
+          />
+          {error && (
+            <p className="text-xs text-red-500 mt-1">{t('alerts.resolveRequired')}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 px-6 pb-5">
+        <button
+          onClick={onClose}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+        >
+          {t('alerts.cancel')}
+        </button>
+        <button
+          onClick={handleConfirm}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 transition-colors flex items-center gap-1.5"
+        >
+          <CheckCircle2 size={13} strokeWidth={2} />
+          {loading ? t('alerts.processing') : t('alerts.confirmResolve')}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Pagination Button ────────────────────────────────────────────────────────
 function PaginationButton({ children, onClick, disabled, active }) {
   return (
     <button
@@ -49,6 +238,7 @@ function PaginationButton({ children, onClick, disabled, active }) {
   )
 }
 
+// ─── Alert Card ───────────────────────────────────────────────────────────────
 function AlertCard({ alert, onAcknowledge, onResolve, acting }) {
   const { t } = useTranslation()
   const isActing    = acting === alert._id
@@ -120,7 +310,7 @@ function AlertCard({ alert, onAcknowledge, onResolve, acting }) {
         <div className="flex items-center gap-2 px-5 py-3 border-t border-gray-100 bg-gray-50/60">
           {alert.status === 'open' && (
             <button
-              onClick={() => onAcknowledge(alert._id)}
+              onClick={() => onAcknowledge(alert)}
               disabled={isActing}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
             >
@@ -129,7 +319,7 @@ function AlertCard({ alert, onAcknowledge, onResolve, acting }) {
             </button>
           )}
           <button
-            onClick={() => onResolve(alert._id)}
+            onClick={() => onResolve(alert)}
             disabled={isActing}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium border border-green-300 text-green-700 rounded-lg hover:bg-green-50 disabled:opacity-50 transition-colors"
           >
@@ -143,6 +333,7 @@ function AlertCard({ alert, onAcknowledge, onResolve, acting }) {
   )
 }
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Alerts() {
   const { t } = useTranslation()
   const [data,    setData]    = useState([])
@@ -151,6 +342,15 @@ export default function Alerts() {
   const [loading, setLoading] = useState(true)
   const [acting,  setActing]  = useState(null)
   const [filters, setFilters] = useState({ status: 'open', severity: '', symbol: '' })
+
+  // Modal state
+  const [ackModal,     setAckModal]     = useState(null) // { id, symbol } | null
+  const [resolveModal, setResolveModal] = useState(null) // { id, symbol } | null
+  const [modalLoading, setModalLoading] = useState(false)
+
+  // Toast state
+  const [toast, setToast] = useState(null) // string | null
+  const showToast = useCallback((msg) => setToast(msg), [])
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -169,24 +369,38 @@ export default function Alerts() {
 
   useEffect(() => { load(1) }, [load])
 
-  const acknowledge = async (id) => {
+  const handleAcknowledgeClick = (alert) => {
+    setAckModal({ id: alert._id, symbol: alert.symbol })
+  }
+
+  const handleResolveClick = (alert) => {
+    setResolveModal({ id: alert._id, symbol: alert.symbol })
+  }
+
+  const confirmAcknowledge = async () => {
+    const { id, symbol } = ackModal
+    setModalLoading(true)
     setActing(id)
     try {
       await api.alerts.acknowledge(id, { acknowledgedBy: 'user' })
+      setAckModal(null)
+      showToast(t('alerts.toastAckSuccess', { symbol }))
       load(page)
-    } catch (e) { alert(e.message) }
-    finally { setActing(null) }
+    } catch (e) { console.error(e) }
+    finally { setModalLoading(false); setActing(null) }
   }
 
-  const resolve = async (id) => {
-    const resolution = prompt(t('alerts.resolvePrompt'))
-    if (!resolution) return
+  const confirmResolve = async (note) => {
+    const { id, symbol } = resolveModal
+    setModalLoading(true)
     setActing(id)
     try {
-      await api.alerts.resolve(id, { resolvedBy: 'user', resolution })
+      await api.alerts.resolve(id, { resolvedBy: 'user', resolution: note })
+      setResolveModal(null)
+      showToast(t('alerts.toastResolveSuccess', { symbol }))
       load(page)
-    } catch (e) { alert(e.message) }
-    finally { setActing(null) }
+    } catch (e) { console.error(e) }
+    finally { setModalLoading(false); setActing(null) }
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
@@ -198,6 +412,25 @@ export default function Alerts() {
 
   return (
     <div className="space-y-4">
+
+      {/* Toast */}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+
+      {/* Modals */}
+      <AcknowledgeModal
+        open={!!ackModal}
+        symbol={ackModal?.symbol}
+        onClose={() => setAckModal(null)}
+        onConfirm={confirmAcknowledge}
+        loading={modalLoading}
+      />
+      <ResolveModal
+        open={!!resolveModal}
+        symbol={resolveModal?.symbol}
+        onClose={() => setResolveModal(null)}
+        onConfirm={confirmResolve}
+        loading={modalLoading}
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -306,7 +539,13 @@ export default function Alerts() {
       ) : (
         <div className="space-y-3">
           {data.map(a => (
-            <AlertCard key={a._id} alert={a} onAcknowledge={acknowledge} onResolve={resolve} acting={acting} />
+            <AlertCard
+              key={a._id}
+              alert={a}
+              onAcknowledge={handleAcknowledgeClick}
+              onResolve={handleResolveClick}
+              acting={acting}
+            />
           ))}
         </div>
       )}

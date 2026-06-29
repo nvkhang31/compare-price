@@ -93,7 +93,20 @@
     "badgeInfo": "Info",
     "badgeOpen": "Đang mở",
     "badgeAcknowledged": "Đã ghi nhận",
-    "badgeResolved": "Đã xử lý"
+    "badgeResolved": "Đã xử lý",
+    "cancel": "Hủy",
+    "ackModalTitle": "Ghi nhận cảnh báo",
+    "ackModalBody": "Bạn có chắc muốn ghi nhận cảnh báo của mã <strong>{{symbol}}</strong>?",
+    "ackModalNote": "Cảnh báo sẽ chuyển sang trạng thái \"Đã ghi nhận\".",
+    "confirmAck": "Ghi nhận",
+    "resolveModalTitle": "Xử lý cảnh báo",
+    "resolveModalBody": "Nhập lý do xử lý cho mã <strong>{{symbol}}</strong>:",
+    "resolveLabel": "Lý do xử lý",
+    "resolvePlaceholder": "Mô tả cách xử lý sai lệch này...",
+    "resolveRequired": "Vui lòng nhập lý do xử lý",
+    "confirmResolve": "Xác nhận xử lý",
+    "toastAckSuccess": "Đã ghi nhận cảnh báo {{symbol}}",
+    "toastResolveSuccess": "Đã xử lý thành công cảnh báo {{symbol}}"
   },
   "audit": {
     "title": "Audit Log",
