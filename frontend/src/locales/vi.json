@@ -135,6 +135,8 @@
     "next": "Sau",
     "page": "Trang {{current}} / {{total}}",
     "selectDate": "Chọn ngày",
+    "today": "Hôm nay",
+    "clearDate": "Xóa ngày",
     "sourceLabel_vps": "VPS",
     "sourceLabel_kbs": "KBS",
     "sourceLabel_vndirect": "VNDirect",

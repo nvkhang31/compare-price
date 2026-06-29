@@ -151,6 +151,15 @@ export default function Comparisons() {
     hasDiscrepancy: '',
     exchange:       ''
   })
+  const [symbolInput, setSymbolInput] = useState('')
+
+  // Debounce symbol search 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters(f => ({ ...f, symbol: symbolInput }))
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [symbolInput])
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -228,8 +237,8 @@ export default function Comparisons() {
             <input
               type="text"
               placeholder={t('comparisons.searchSymbol')}
-              value={filters.symbol}
-              onChange={e => setFilters(f => ({ ...f, symbol: e.target.value }))}
+              value={symbolInput}
+              onChange={e => setSymbolInput(e.target.value)}
               className="border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 text-sm w-40 bg-gray-50 focus:bg-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
             />
           </div>
