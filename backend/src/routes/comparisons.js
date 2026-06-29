@@ -24,7 +24,7 @@ router.get('/', async (req, res, next) => {
     const { date, hasDiscrepancy, symbol, exchange, vn30, limit = 100, page = 1 } = req.query;
     const filter = {};
     if (date)     filter.date     = date;
-    if (symbol)   filter.symbol   = symbol.toUpperCase();
+    if (symbol)   filter.symbol   = { $regex: `^${symbol.toUpperCase()}` };
     if (vn30 === 'true') {
       filter.symbol = { $in: VN30_SYMBOLS };
     } else if (exchange) {

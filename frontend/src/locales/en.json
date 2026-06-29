@@ -135,6 +135,8 @@
     "next": "Next",
     "page": "Page {{current}} / {{total}}",
     "selectDate": "Select date",
+    "today": "Today",
+    "clearDate": "Clear",
     "sourceLabel_vps": "VPS",
     "sourceLabel_kbs": "KBS",
     "sourceLabel_vndirect": "VNDirect",
