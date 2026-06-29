@@ -93,7 +93,20 @@
     "badgeInfo": "Info",
     "badgeOpen": "Open",
     "badgeAcknowledged": "Acknowledged",
-    "badgeResolved": "Resolved"
+    "badgeResolved": "Resolved",
+    "cancel": "Cancel",
+    "ackModalTitle": "Acknowledge Alert",
+    "ackModalBody": "Are you sure you want to acknowledge the alert for <strong>{{symbol}}</strong>?",
+    "ackModalNote": "The alert will move to \"Acknowledged\" status.",
+    "confirmAck": "Acknowledge",
+    "resolveModalTitle": "Resolve Alert",
+    "resolveModalBody": "Enter a resolution note for <strong>{{symbol}}</strong>:",
+    "resolveLabel": "Resolution note",
+    "resolvePlaceholder": "Describe how this discrepancy was resolved...",
+    "resolveRequired": "Please enter a resolution note",
+    "confirmResolve": "Confirm resolve",
+    "toastAckSuccess": "Alert {{symbol}} acknowledged",
+    "toastResolveSuccess": "Alert {{symbol}} resolved successfully"
   },
   "audit": {
     "title": "Audit Log",
