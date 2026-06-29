@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import {
   Database,
@@ -10,7 +11,6 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  TrendingUp,
   Activity
 } from 'lucide-react'
 import dayjs from 'dayjs'
@@ -20,16 +20,15 @@ import StatsCard from '../components/StatsCard'
 import AlertBadge from '../components/AlertBadge'
 import { cn } from '@/lib/utils'
 
-dayjs.locale('vi')
-
 function ChartTooltip({ active, payload, label }) {
+  const { t } = useTranslation()
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-gray-200 shadow-lg rounded-lg px-3 py-2 text-sm">
       <p className="text-gray-400 text-xs mb-0.5">{label}</p>
       <p className="font-semibold text-gray-800">
         {payload[0].value}{' '}
-        <span className="font-normal text-gray-500">sai lệch</span>
+        <span className="font-normal text-gray-500">{t('dashboard.chartTooltipLabel')}</span>
       </p>
     </div>
   )
@@ -58,6 +57,7 @@ function SkeletonCard() {
 }
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation()
   const [stats,     setStats]     = useState(null)
   const [alerts,    setAlerts]    = useState([])
   const [trendData, setTrendData] = useState([])
@@ -92,6 +92,8 @@ export default function Dashboard() {
     load()
   }, [])
 
+  // Locale cho dayjs theo ngôn ngữ đang chọn
+  const dateLocale = i18n.language === 'vi' ? 'vi' : 'en'
   const s = stats ?? {}
 
   return (
@@ -100,9 +102,9 @@ export default function Dashboard() {
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{t('dashboard.title')}</h1>
           <p className="text-sm text-gray-400 mt-0.5">
-            {dayjs().format('dddd, DD/MM/YYYY')}
+            {dayjs().locale(dateLocale).format(i18n.language === 'vi' ? 'dddd, DD/MM/YYYY' : 'dddd, MMMM D, YYYY')}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -116,12 +118,12 @@ export default function Dashboard() {
           {s.lastSyncAt ? (
             <span className="inline-flex items-center gap-1 text-xs text-gray-400">
               <Clock size={11} />
-              Sync cuối: {dayjs(s.lastSyncAt).format('HH:mm DD/MM')}
+              {t('dashboard.lastSync', { time: dayjs(s.lastSyncAt).format('HH:mm DD/MM') })}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 text-xs text-gray-400">
               <Clock size={11} />
-              Chưa có lần sync nào
+              {t('dashboard.noSync')}
             </span>
           )}
         </div>
@@ -135,32 +137,34 @@ export default function Dashboard() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatsCard
-            title="Mã đang theo dõi"
+            title={t('dashboard.symbolsTracked')}
             value={s.symbolsTracked ?? 0}
             color="blue"
             icon={Database}
-            sub={`${s.sourcesAvailable?.length ?? 0} nguồn dữ liệu`}
+            sub={t('dashboard.dataSources', { count: s.sourcesAvailable?.length ?? 0 })}
           />
           <StatsCard
-            title="Sai lệch hôm nay"
+            title={t('dashboard.discrepanciesToday')}
             value={s.discrepanciesToday ?? 0}
             color={s.discrepanciesToday > 0 ? 'red' : 'green'}
             icon={ArrowLeftRight}
-            sub={s.matchRate != null ? `Match rate ${s.matchRate}%` : 'Chờ so sánh'}
+            sub={s.matchRate != null
+              ? t('dashboard.matchRate', { value: s.matchRate })
+              : t('dashboard.waitingCompare')}
           />
           <StatsCard
-            title="Cảnh báo đang mở"
+            title={t('dashboard.openAlerts')}
             value={s.openAlerts ?? 0}
             color={s.openAlerts > 0 ? 'yellow' : 'green'}
             icon={Bell}
-            sub="Chưa xử lý"
+            sub={t('dashboard.unresolved')}
           />
           <StatsCard
-            title="Critical"
+            title={t('dashboard.critical')}
             value={s.criticalAlerts ?? 0}
             color={s.criticalAlerts > 0 ? 'red' : 'gray'}
             icon={ShieldAlert}
-            sub="Chênh lệch > 5%"
+            sub={t('dashboard.criticalSub')}
           />
         </div>
       )}
@@ -169,11 +173,11 @@ export default function Dashboard() {
       {!loading && s.sourcesAvailable && s.sourcesAvailable.length < 3 && (
         <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700">
           <AlertCircle size={16} className="shrink-0 mt-0.5" strokeWidth={2} />
-          <span>
-            Đang hoạt động:{' '}
-            <strong>{s.sourcesAvailable.map(x => x.toUpperCase()).join(', ')}</strong>.{' '}
-            VNDirect và TCBS chưa khả dụng — so sánh sẽ đầy đủ hơn khi có thêm nguồn.
-          </span>
+          <span dangerouslySetInnerHTML={{
+            __html: t('dashboard.limitedSources', {
+              sources: s.sourcesAvailable.map(x => x.toUpperCase()).join(', ')
+            })
+          }} />
         </div>
       )}
 
@@ -187,8 +191,8 @@ export default function Dashboard() {
               <Activity size={14} className="text-blue-500" strokeWidth={2} />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-gray-800">Xu hướng sai lệch</h2>
-              <p className="text-xs text-gray-400">7 ngày gần nhất</p>
+              <h2 className="text-sm font-semibold text-gray-800">{t('dashboard.chartTitle')}</h2>
+              <p className="text-xs text-gray-400">{t('dashboard.chartSub')}</p>
             </div>
           </div>
           {loading ? (
@@ -196,25 +200,12 @@ export default function Dashboard() {
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11, fill: '#9ca3af' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: '#9ca3af' }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                 <Bar dataKey="discrepancies" radius={[5, 5, 0, 0]} maxBarSize={40}>
                   {trendData.map((entry, i) => (
-                    <Cell
-                      key={i}
-                      fill={entry.discrepancies > 0 ? '#f87171' : '#bfdbfe'}
-                    />
+                    <Cell key={i} fill={entry.discrepancies > 0 ? '#f87171' : '#bfdbfe'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -230,33 +221,28 @@ export default function Dashboard() {
                 <Bell size={14} className="text-red-500" strokeWidth={2} />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-gray-800">Cảnh báo đang mở</h2>
+                <h2 className="text-sm font-semibold text-gray-800">{t('dashboard.openAlertsTitle')}</h2>
                 {alerts.length > 0 && (
-                  <p className="text-xs text-gray-400">{alerts.length} gần nhất</p>
+                  <p className="text-xs text-gray-400">{t('dashboard.recentCount', { count: alerts.length })}</p>
                 )}
               </div>
             </div>
-            <Link
-              to="/alerts"
-              className="inline-flex items-center gap-0.5 text-xs text-blue-500 hover:text-blue-600 font-medium"
-            >
-              Xem tất cả <ArrowRight size={12} />
+            <Link to="/alerts" className="inline-flex items-center gap-0.5 text-xs text-blue-500 hover:text-blue-600 font-medium">
+              {t('dashboard.viewAll')} <ArrowRight size={12} />
             </Link>
           </div>
 
           {loading ? (
             <div className="flex-1 space-y-3">
-              {[0,1,2].map(i => (
-                <div key={i} className="h-10 bg-gray-50 rounded-lg animate-pulse" />
-              ))}
+              {[0,1,2].map(i => <div key={i} className="h-10 bg-gray-50 rounded-lg animate-pulse" />)}
             </div>
           ) : alerts.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
               <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-3">
                 <CheckCircle2 size={22} className="text-green-500" strokeWidth={1.5} />
               </div>
-              <p className="text-sm font-medium text-gray-600">Không có cảnh báo</p>
-              <p className="text-xs text-gray-400 mt-0.5">Tất cả giá đang khớp nhau</p>
+              <p className="text-sm font-medium text-gray-600">{t('dashboard.noAlerts')}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{t('dashboard.allMatch')}</p>
             </div>
           ) : (
             <div className="flex-1 space-y-2 overflow-auto">
@@ -273,9 +259,7 @@ export default function Dashboard() {
                     <AlertBadge type={a.severity} />
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-red-600 font-medium">
-                      {a.differencePercent?.toFixed(2)}%
-                    </span>
+                    <span className="text-red-600 font-medium">{a.differencePercent?.toFixed(2)}%</span>
                     <span className="text-gray-400">{a.date}</span>
                   </div>
                 </div>

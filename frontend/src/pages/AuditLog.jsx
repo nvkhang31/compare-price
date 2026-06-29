@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import {
   ScrollText,
@@ -27,24 +28,25 @@ import api from '../services/api'
 const PAGE_SIZE = 50
 
 const ACTION_CONFIG = {
-  scheduler_started:     { label: 'Scheduler khởi động',  icon: Bot,          color: 'text-slate-500',  bg: 'bg-slate-50'  },
-  daily_sync_started:    { label: 'Bắt đầu sync',         icon: RefreshCw,    color: 'text-blue-500',   bg: 'bg-blue-50'   },
-  daily_sync_completed:  { label: 'Sync hoàn thành',       icon: CheckCircle2, color: 'text-green-500',  bg: 'bg-green-50'  },
-  daily_sync_failed:     { label: 'Sync thất bại',          icon: XCircle,      color: 'text-red-500',    bg: 'bg-red-50'    },
-  manual_sync_triggered: { label: 'Sync thủ công',         icon: Zap,          color: 'text-violet-500', bg: 'bg-violet-50' },
-  comparison_completed:  { label: 'So sánh hoàn thành',    icon: BarChart3,    color: 'text-blue-500',   bg: 'bg-blue-50'   },
-  alert_created:         { label: 'Tạo cảnh báo',          icon: Bell,         color: 'text-amber-500',  bg: 'bg-amber-50'  },
-  alert_acknowledged:    { label: 'Ghi nhận cảnh báo',     icon: Clock,        color: 'text-amber-500',  bg: 'bg-amber-50'  },
-  alert_resolved:        { label: 'Xử lý cảnh báo',        icon: Check,        color: 'text-green-500',  bg: 'bg-green-50'  }
+  scheduler_started:     { icon: Bot,          color: 'text-slate-500',  bg: 'bg-slate-50',   labelKey: 'audit.actionSchedulerStarted'  },
+  daily_sync_started:    { icon: RefreshCw,    color: 'text-blue-500',   bg: 'bg-blue-50',    labelKey: 'audit.actionSyncStarted'        },
+  daily_sync_completed:  { icon: CheckCircle2, color: 'text-green-500',  bg: 'bg-green-50',   labelKey: 'audit.actionSyncCompleted'      },
+  daily_sync_failed:     { icon: XCircle,      color: 'text-red-500',    bg: 'bg-red-50',     labelKey: 'audit.actionSyncFailed'         },
+  manual_sync_triggered: { icon: Zap,          color: 'text-violet-500', bg: 'bg-violet-50',  labelKey: 'audit.actionManualSync'         },
+  comparison_completed:  { icon: BarChart3,    color: 'text-blue-500',   bg: 'bg-blue-50',    labelKey: 'audit.actionComparisonCompleted'},
+  alert_created:         { icon: Bell,         color: 'text-amber-500',  bg: 'bg-amber-50',   labelKey: 'audit.actionAlertCreated'       },
+  alert_acknowledged:    { icon: Clock,        color: 'text-amber-500',  bg: 'bg-amber-50',   labelKey: 'audit.actionAlertAcknowledged'  },
+  alert_resolved:        { icon: Check,        color: 'text-green-500',  bg: 'bg-green-50',   labelKey: 'audit.actionAlertResolved'      }
 }
 
 const STATUS_CONFIG = {
-  success: { label: 'Thành công', bg: 'bg-green-50',  text: 'text-green-700', border: 'border-green-200' },
-  partial: { label: 'Một phần',   bg: 'bg-amber-50',  text: 'text-amber-700', border: 'border-amber-200' },
-  failed:  { label: 'Thất bại',   bg: 'bg-red-50',    text: 'text-red-700',   border: 'border-red-200'   }
+  success: { labelKey: 'audit.statusSuccess', bg: 'bg-green-50',  text: 'text-green-700', border: 'border-green-200' },
+  partial: { labelKey: 'audit.statusPartial', bg: 'bg-amber-50',  text: 'text-amber-700', border: 'border-amber-200' },
+  failed:  { labelKey: 'audit.statusFailed',  bg: 'bg-red-50',    text: 'text-red-700',   border: 'border-red-200'   }
 }
 
 function ActionCell({ action }) {
+  const { t } = useTranslation()
   const cfg = ACTION_CONFIG[action]
   if (!cfg) return <span className="text-xs text-gray-500">{action}</span>
   const Icon = cfg.icon
@@ -53,32 +55,34 @@ function ActionCell({ action }) {
       <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center shrink-0', cfg.bg)}>
         <Icon size={13} className={cfg.color} strokeWidth={2} />
       </div>
-      <span className="text-sm font-medium text-gray-700">{cfg.label}</span>
+      <span className="text-sm font-medium text-gray-700">{t(cfg.labelKey)}</span>
     </div>
   )
 }
 
 function StatusBadge({ status }) {
+  const { t } = useTranslation()
   const c = STATUS_CONFIG[status]
   if (!c) return <span className="text-xs text-gray-400">{status}</span>
   return (
     <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium border', c.bg, c.text, c.border)}>
-      {c.label}
+      {t(c.labelKey)}
     </span>
   )
 }
 
 function TriggeredBy({ value }) {
+  const { t } = useTranslation()
   if (value === 'scheduler') return (
     <span className="inline-flex items-center gap-1 text-xs text-gray-500">
       <Bot size={12} className="text-blue-400" strokeWidth={2} />
-      Tự động
+      {t('audit.triggeredAuto')}
     </span>
   )
   return (
     <span className="inline-flex items-center gap-1 text-xs text-gray-500">
       <User size={12} className="text-violet-400" strokeWidth={2} />
-      Thủ công
+      {t('audit.triggeredManual')}
     </span>
   )
 }
@@ -88,17 +92,17 @@ function DetailChip({ icon: Icon, label, value, color = 'text-gray-500' }) {
   return (
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 text-xs text-gray-500 whitespace-nowrap">
       <Icon size={10} className={color} strokeWidth={2} />
-      <span className="text-gray-400">{label}</span>
+      {label && <span className="text-gray-400">{label}</span>}
       <span className={cn('font-medium', color)}>{value}</span>
     </span>
   )
 }
 
 function DetailCell({ details }) {
+  const { t } = useTranslation()
   if (!details) return <span className="text-gray-300">—</span>
   const chips = []
 
-  // scheduler_started: hiển thị danh sách sources
   if (details.sources?.length) {
     chips.push(
       <span key="sources" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-xs text-slate-600">
@@ -107,7 +111,7 @@ function DetailCell({ details }) {
       </span>
     )
     if (details.syncTime)
-      chips.push(<DetailChip key="time" icon={Timer} label="lúc" value={details.syncTime} color="text-gray-400" />)
+      chips.push(<DetailChip key="time" icon={Timer} label={t('audit.detailSyncAt')} value={details.syncTime} color="text-gray-400" />)
     return <div className="flex flex-wrap gap-1">{chips}</div>
   }
 
@@ -128,7 +132,7 @@ function DetailCell({ details }) {
       <DetailChip
         key="disc"
         icon={AlertTriangle}
-        label="Sai lệch"
+        label={t('audit.detailDiscrepancy')}
         value={details.comparison.withDiscrepancy}
         color={details.comparison.withDiscrepancy > 0 ? 'text-red-500' : 'text-green-500'}
       />
@@ -169,6 +173,7 @@ function PaginationButton({ children, onClick, disabled, active }) {
 }
 
 export default function AuditLog() {
+  const { t } = useTranslation()
   const [data,    setData]    = useState([])
   const [total,   setTotal]   = useState(0)
   const [page,    setPage]    = useState(1)
@@ -208,9 +213,9 @@ export default function AuditLog() {
             <ScrollText size={16} className="text-gray-500" strokeWidth={2} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Audit Log</h1>
+            <h1 className="text-xl font-semibold text-gray-900">{t('audit.title')}</h1>
             <p className="text-xs text-gray-400">
-              {loading ? '...' : <><strong className="text-gray-600">{total.toLocaleString()}</strong> bản ghi</>}
+              {loading ? '...' : <><strong className="text-gray-600">{total.toLocaleString()}</strong> {t('audit.recordCount', { count: '' }).trim()}</>}
             </p>
           </div>
         </div>
@@ -221,30 +226,30 @@ export default function AuditLog() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium uppercase tracking-wide">
             <SlidersHorizontal size={12} strokeWidth={2} />
-            Bộ lọc
+            {t('audit.filter')}
           </div>
           <Select
             value={filters.action}
             onChange={v => setFilters(f => ({ ...f, action: v }))}
-            placeholder="Tất cả hành động"
-            className="w-48"
+            placeholder={t('audit.allActions')}
+            className="w-52"
           >
-            <SelectOption value="">Tất cả hành động</SelectOption>
+            <SelectOption value="">{t('audit.allActions')}</SelectOption>
             {Object.entries(ACTION_CONFIG).map(([k, v]) => (
-              <SelectOption key={k} value={k}>{v.label}</SelectOption>
+              <SelectOption key={k} value={k}>{t(v.labelKey)}</SelectOption>
             ))}
           </Select>
 
           <Select
             value={filters.status}
             onChange={v => setFilters(f => ({ ...f, status: v }))}
-            placeholder="Tất cả trạng thái"
+            placeholder={t('audit.allStatus')}
             className="w-44"
           >
-            <SelectOption value="">Tất cả trạng thái</SelectOption>
-            <SelectOption value="success">Thành công</SelectOption>
-            <SelectOption value="partial">Một phần</SelectOption>
-            <SelectOption value="failed">Thất bại</SelectOption>
+            <SelectOption value="">{t('audit.allStatus')}</SelectOption>
+            <SelectOption value="success">{t('audit.statusSuccess')}</SelectOption>
+            <SelectOption value="partial">{t('audit.statusPartial')}</SelectOption>
+            <SelectOption value="failed">{t('audit.statusFailed')}</SelectOption>
           </Select>
         </div>
       </div>
@@ -256,7 +261,7 @@ export default function AuditLog() {
             <div className="flex items-center justify-center py-20">
               <div className="flex flex-col items-center gap-3 text-gray-400">
                 <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-                <span className="text-sm">Đang tải...</span>
+                <span className="text-sm">{t('audit.loading')}</span>
               </div>
             </div>
           ) : data.length === 0 ? (
@@ -264,17 +269,17 @@ export default function AuditLog() {
               <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center">
                 <ScrollText size={26} className="text-gray-300" strokeWidth={1.5} />
               </div>
-              <p className="text-sm text-gray-400">Không có bản ghi nào</p>
+              <p className="text-sm text-gray-400">{t('audit.noData')}</p>
             </div>
           ) : (
             <table className="w-full text-sm min-w-[800px]">
               <thead className="sticky top-0 z-10">
                 <tr className="text-left bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide whitespace-nowrap">Thời gian</th>
-                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide">Hành động</th>
-                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide">Trạng thái</th>
-                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide">Nguồn</th>
-                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide">Chi tiết</th>
+                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide whitespace-nowrap">{t('audit.colTime')}</th>
+                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide">{t('audit.colAction')}</th>
+                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide">{t('audit.colStatus')}</th>
+                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide">{t('audit.colSource')}</th>
+                  <th className="px-4 py-3 font-medium text-xs text-gray-500 uppercase tracking-wide">{t('audit.colDetail')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -308,21 +313,15 @@ export default function AuditLog() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-gray-400">
-            Trang <strong className="text-gray-600">{page}</strong> / {totalPages}
-            {' '}· <strong className="text-gray-600">{total.toLocaleString()}</strong> bản ghi
+            {t('audit.page', { current: page, total: totalPages })}
+            {' · '}<strong className="text-gray-600">{total.toLocaleString()}</strong> {t('audit.pageRecords', { count: '' }).trim()}
           </p>
           <div className="flex items-center gap-1">
-            <PaginationButton onClick={() => load(page - 1)} disabled={page === 1}>
-              <ChevronLeft size={14} />
-            </PaginationButton>
+            <PaginationButton onClick={() => load(page - 1)} disabled={page === 1}><ChevronLeft size={14} /></PaginationButton>
             {pageNumbers().map(n => (
-              <PaginationButton key={n} onClick={() => load(n)} active={n === page}>
-                {n}
-              </PaginationButton>
+              <PaginationButton key={n} onClick={() => load(n)} active={n === page}>{n}</PaginationButton>
             ))}
-            <PaginationButton onClick={() => load(page + 1)} disabled={page === totalPages}>
-              <ChevronRight size={14} />
-            </PaginationButton>
+            <PaginationButton onClick={() => load(page + 1)} disabled={page === totalPages}><ChevronRight size={14} /></PaginationButton>
           </div>
         </div>
       )}
