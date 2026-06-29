@@ -9,6 +9,7 @@ const vndirectService  = require('../services/vndirectService');
 const tcbsService      = require('../services/tcbsService');
 const comparisonService = require('../services/comparisonService');
 const alertService     = require('../services/alertService');
+const emailService     = require('../services/emailService');
 
 // Đọc giờ sync từ env: "15:30" → cron "30 15 * * 1-5"
 function buildCronExpression(timeStr) {
@@ -88,15 +89,30 @@ async function runDailySync() {
     console.error(`[DailySync] Comparison failed:`, e.message);
   }
 
-  // 7. Alerts
+  // 7. Alerts + Email notification
+  let discrepant = [];
   try {
     if (summary.comparison?.withDiscrepancy > 0) {
-      const discrepant  = await Comparison.find({ date, hasDiscrepancy: true }).lean();
-      summary.alerts    = await alertService.processAll(discrepant);
+      discrepant     = await Comparison.find({ date, hasDiscrepancy: true }).lean();
+      summary.alerts = await alertService.processAll(discrepant);
       console.log(`[DailySync] Alerts created: ${summary.alerts}`);
     }
   } catch (e) {
     console.error(`[DailySync] Alert failed:`, e.message);
+  }
+
+  // 8. Email — gửi khi có sai lệch
+  try {
+    if (discrepant.length > 0) {
+      const result = await emailService.sendDiscrepancyEmail({ date, discrepant, summary });
+      if (result.skipped) {
+        console.log('[DailySync] Email skipped (not configured)');
+      } else {
+        console.log(`[DailySync] Email sent — ${discrepant.length} discrepancies`);
+      }
+    }
+  } catch (e) {
+    console.error(`[DailySync] Email failed:`, e.message);
   }
 
   const duration = Date.now() - startTime;
