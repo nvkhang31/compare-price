@@ -112,6 +112,8 @@ async function runDailySync() {
   console.log(`[DailySync] Finished in ${duration}ms. Discrepancies: ${summary.comparison?.withDiscrepancy ?? 0}`);
 }
 
+const ACTIVE_SOURCES = ['kis', 'vps', 'kbs']; // cập nhật khi thêm/bớt source
+
 function startScheduler() {
   if (process.env.DAILY_SYNC_ENABLED !== 'true') {
     console.log('[DailySync] Scheduler disabled (DAILY_SYNC_ENABLED != true)');
@@ -119,7 +121,21 @@ function startScheduler() {
   }
 
   const cronExpr = buildCronExpression(process.env.DAILY_SYNC_TIME);
-  console.log(`[DailySync] Scheduled at cron: "${cronExpr}" (${process.env.DAILY_SYNC_TIME} Mon–Fri)`);
+
+  // Startup banner — hiển thị ngay khi server khởi động
+  console.log('━'.repeat(52));
+  console.log(`[DailySync] Scheduler READY`);
+  console.log(`[DailySync] Cron   : ${cronExpr} (${process.env.DAILY_SYNC_TIME} Mon–Fri ICT)`);
+  console.log(`[DailySync] Sources: ${ACTIVE_SOURCES.join(', ')}`);
+  console.log('━'.repeat(52));
+
+  // Ghi vào AuditLog để track từ UI
+  AuditLog.create({
+    action:      'scheduler_started',
+    status:      'success',
+    details:     { sources: ACTIVE_SOURCES, cronExpr, syncTime: process.env.DAILY_SYNC_TIME },
+    triggeredBy: 'system'
+  }).catch(() => {}); // không block startup nếu DB chưa kết nối
 
   cron.schedule(cronExpr, () => {
     runDailySync().catch(err =>
