@@ -27,14 +27,15 @@ import api from '../services/api'
 const PAGE_SIZE = 50
 
 const ACTION_CONFIG = {
-  daily_sync_started:    { label: 'Bắt đầu sync',        icon: RefreshCw,    color: 'text-blue-500',   bg: 'bg-blue-50'   },
-  daily_sync_completed:  { label: 'Sync hoàn thành',      icon: CheckCircle2, color: 'text-green-500',  bg: 'bg-green-50'  },
-  daily_sync_failed:     { label: 'Sync thất bại',         icon: XCircle,      color: 'text-red-500',    bg: 'bg-red-50'    },
-  manual_sync_triggered: { label: 'Sync thủ công',        icon: Zap,          color: 'text-violet-500', bg: 'bg-violet-50' },
-  comparison_completed:  { label: 'So sánh hoàn thành',   icon: BarChart3,    color: 'text-blue-500',   bg: 'bg-blue-50'   },
-  alert_created:         { label: 'Tạo cảnh báo',         icon: Bell,         color: 'text-amber-500',  bg: 'bg-amber-50'  },
-  alert_acknowledged:    { label: 'Ghi nhận cảnh báo',    icon: Clock,        color: 'text-amber-500',  bg: 'bg-amber-50'  },
-  alert_resolved:        { label: 'Xử lý cảnh báo',       icon: Check,        color: 'text-green-500',  bg: 'bg-green-50'  }
+  scheduler_started:     { label: 'Scheduler khởi động',  icon: Bot,          color: 'text-slate-500',  bg: 'bg-slate-50'  },
+  daily_sync_started:    { label: 'Bắt đầu sync',         icon: RefreshCw,    color: 'text-blue-500',   bg: 'bg-blue-50'   },
+  daily_sync_completed:  { label: 'Sync hoàn thành',       icon: CheckCircle2, color: 'text-green-500',  bg: 'bg-green-50'  },
+  daily_sync_failed:     { label: 'Sync thất bại',          icon: XCircle,      color: 'text-red-500',    bg: 'bg-red-50'    },
+  manual_sync_triggered: { label: 'Sync thủ công',         icon: Zap,          color: 'text-violet-500', bg: 'bg-violet-50' },
+  comparison_completed:  { label: 'So sánh hoàn thành',    icon: BarChart3,    color: 'text-blue-500',   bg: 'bg-blue-50'   },
+  alert_created:         { label: 'Tạo cảnh báo',          icon: Bell,         color: 'text-amber-500',  bg: 'bg-amber-50'  },
+  alert_acknowledged:    { label: 'Ghi nhận cảnh báo',     icon: Clock,        color: 'text-amber-500',  bg: 'bg-amber-50'  },
+  alert_resolved:        { label: 'Xử lý cảnh báo',        icon: Check,        color: 'text-green-500',  bg: 'bg-green-50'  }
 }
 
 const STATUS_CONFIG = {
@@ -96,6 +97,19 @@ function DetailChip({ icon: Icon, label, value, color = 'text-gray-500' }) {
 function DetailCell({ details }) {
   if (!details) return <span className="text-gray-300">—</span>
   const chips = []
+
+  // scheduler_started: hiển thị danh sách sources
+  if (details.sources?.length) {
+    chips.push(
+      <span key="sources" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-xs text-slate-600">
+        <Database size={10} className="text-slate-400" strokeWidth={2} />
+        <span className="font-medium">{details.sources.join(' · ')}</span>
+      </span>
+    )
+    if (details.syncTime)
+      chips.push(<DetailChip key="time" icon={Timer} label="lúc" value={details.syncTime} color="text-gray-400" />)
+    return <div className="flex flex-wrap gap-1">{chips}</div>
+  }
 
   if (details.date)
     chips.push(<DetailChip key="date" icon={Calendar} label="" value={details.date} color="text-gray-500" />)
