@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   BarChart3,
@@ -11,17 +12,54 @@ import {
 import { cn } from '@/lib/utils'
 import api from '../services/api'
 
-const links = [
-  { to: '/dashboard',   label: 'Dashboard',    icon: LayoutDashboard },
-  { to: '/comparisons', label: 'So sánh giá',  icon: BarChart3       },
-  { to: '/alerts',      label: 'Cảnh báo',     icon: Bell            },
-  { to: '/audit-log',   label: 'Audit Log',    icon: ScrollText      }
-]
+function LangToggle() {
+  const { i18n } = useTranslation()
+  const isVI = i18n.language === 'vi'
+
+  const toggle = () => {
+    const next = isVI ? 'en' : 'vi'
+    i18n.changeLanguage(next)
+    localStorage.setItem('lang', next)
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className={cn(
+        'flex items-center gap-0.5 rounded-lg border text-xs font-semibold tracking-wide',
+        'overflow-hidden transition-colors duration-150',
+        'border-slate-700 bg-slate-800'
+      )}
+      title={isVI ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+    >
+      <span className={cn(
+        'px-2 py-1.5 transition-colors duration-150',
+        isVI ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+      )}>
+        VIE
+      </span>
+      <span className={cn(
+        'px-2 py-1.5 transition-colors duration-150',
+        !isVI ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+      )}>
+        ENG
+      </span>
+    </button>
+  )
+}
 
 export default function Navbar() {
+  const { t } = useTranslation()
   const [syncing, setSyncing] = useState(false)
   const [msg,     setMsg]     = useState('')
-  const [msgType, setMsgType] = useState('success') // 'success' | 'error'
+  const [msgType, setMsgType] = useState('success')
+
+  const links = [
+    { to: '/dashboard',   label: t('nav.dashboard'),   icon: LayoutDashboard },
+    { to: '/comparisons', label: t('nav.comparisons'), icon: BarChart3       },
+    { to: '/alerts',      label: t('nav.alerts'),      icon: Bell            },
+    { to: '/audit-log',   label: t('nav.auditLog'),    icon: ScrollText      }
+  ]
 
   const handleSync = async () => {
     setSyncing(true)
@@ -29,10 +67,10 @@ export default function Navbar() {
     try {
       await api.prices.sync()
       setMsgType('success')
-      setMsg('Sync đã kích hoạt')
+      setMsg(t('nav.syncOk'))
     } catch (e) {
       setMsgType('error')
-      setMsg('Sync thất bại')
+      setMsg(t('nav.syncFail'))
     } finally {
       setSyncing(false)
       setTimeout(() => setMsg(''), 4000)
@@ -76,8 +114,10 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Sync button + message */}
+          {/* Right side: lang toggle + sync */}
           <div className="flex items-center gap-3 shrink-0">
+            <LangToggle />
+
             {msg && (
               <span className={cn(
                 'text-xs font-medium px-2 py-1 rounded',
@@ -88,6 +128,7 @@ export default function Navbar() {
                 {msg}
               </span>
             )}
+
             <button
               onClick={handleSync}
               disabled={syncing}
@@ -97,12 +138,8 @@ export default function Navbar() {
                 'disabled:opacity-60 disabled:cursor-not-allowed'
               )}
             >
-              <RefreshCw
-                size={14}
-                strokeWidth={2}
-                className={syncing ? 'animate-spin' : ''}
-              />
-              <span>{syncing ? 'Đang sync...' : 'Sync ngay'}</span>
+              <RefreshCw size={14} strokeWidth={2} className={syncing ? 'animate-spin' : ''} />
+              <span>{syncing ? t('nav.syncing') : t('nav.syncNow')}</span>
             </button>
           </div>
 
