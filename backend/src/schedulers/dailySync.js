@@ -9,7 +9,7 @@ const vndirectService  = require('../services/vndirectService');
 const tcbsService      = require('../services/tcbsService');
 const comparisonService = require('../services/comparisonService');
 const alertService     = require('../services/alertService');
-const emailService     = require('../services/emailService');
+const slackService     = require('../services/slackService');
 
 // Đọc giờ sync từ env: "15:30" → cron "30 15 * * 1-5"
 function buildCronExpression(timeStr) {
@@ -101,18 +101,18 @@ async function runDailySync() {
     console.error(`[DailySync] Alert failed:`, e.message);
   }
 
-  // 8. Email — gửi khi có sai lệch
+  // 8. Slack notification — gửi khi có sai lệch
   try {
     if (discrepant.length > 0) {
-      const result = await emailService.sendDiscrepancyEmail({ date, discrepant, summary });
+      const result = await slackService.sendDiscrepancyAlert({ date, discrepant, summary });
       if (result.skipped) {
-        console.log('[DailySync] Email skipped (not configured)');
+        console.log('[DailySync] Slack skipped (not configured)');
       } else {
-        console.log(`[DailySync] Email sent — ${discrepant.length} discrepancies`);
+        console.log(`[DailySync] Slack sent — ${discrepant.length} discrepancies notified`);
       }
     }
   } catch (e) {
-    console.error(`[DailySync] Email failed:`, e.message);
+    console.error(`[DailySync] Slack failed:`, e.message);
   }
 
   const duration = Date.now() - startTime;
