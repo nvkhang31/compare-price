@@ -15,8 +15,10 @@ class KISService {
         headers: { 'User-Agent': 'Mozilla/5.0' }
       })
     );
-    // Only keep listed stocks — exclude FUTURES, BOND, ETF
-    return response.data.filter(item => item.t === 'STOCK' && item.status === 'Listed');
+    // Keep all tradable listed instruments: stocks, ETFs, futures, covered warrants
+    // Exclude BOND (placeholder ceiling=999999999), INDEX (no ce/fl), and non-Listed
+    const TRADABLE_TYPES = new Set(['STOCK', 'ETF', 'FUTURES', 'CW']);
+    return response.data.filter(item => TRADABLE_TYPES.has(item.t) && item.status === 'Listed');
   }
 
   transform(item, date) {

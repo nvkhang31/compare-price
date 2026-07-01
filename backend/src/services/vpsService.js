@@ -17,8 +17,8 @@ class VPSService {
         headers: { 'User-Agent': 'Mozilla/5.0' }
       })
     );
-    // Chỉ lấy cổ phiếu thường (sType='S'), bỏ CW/phái sinh
-    return (response.data || []).filter(item => item.sType === 'S' && item.sym);
+    // Keep stocks (S), ETFs (E), covered warrants (W) — VPS has no futures data
+    return (response.data || []).filter(item => item.sym && ['S', 'E', 'W'].includes(item.sType));
   }
 
   async fetchAllPrices(symbols) {

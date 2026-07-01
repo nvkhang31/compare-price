@@ -23,8 +23,10 @@ class VCIService {
     const response = await withRetry(() =>
       axios.post(BASE_URL, { symbols }, { timeout: this.timeout, headers: HEADERS })
     );
+    // Keep stocks, ETFs, covered warrants, futures (VCI uses 'FU' for futures)
+    const TRADABLE = new Set(['STOCK', 'ETF', 'CW', 'FU']);
     return (response.data || []).filter(item =>
-      item?.listingInfo?.type === 'STOCK' && item?.listingInfo?.symbol
+      item?.listingInfo?.symbol && TRADABLE.has(item.listingInfo.type)
     );
   }
 
