@@ -12,10 +12,13 @@ const alertService     = require('../services/alertService');
 const vciService       = require('../services/vciService');
 const slackService     = require('../services/slackService');
 
-// Đọc giờ sync từ env: "15:30" → cron "30 15 * * 1-5"
-function buildCronExpression(timeStr) {
-  const [hour, minute] = (timeStr || '15:30').split(':');
-  return `${parseInt(minute)} ${parseInt(hour)} * * 1-5`; // Thứ 2–6
+// Parse "08:15,15:30" → [{ time, cronExpr }]
+function parseSyncTimes(envValue) {
+  const times = (envValue || '15:30').split(',').map(s => s.trim()).filter(Boolean);
+  return times.map(time => {
+    const [hour, minute] = time.split(':');
+    return { time, cronExpr: `${parseInt(minute)} ${parseInt(hour)} * * 1-5` };
+  });
 }
 
 async function runDailySync() {
@@ -147,28 +150,32 @@ function startScheduler() {
     return;
   }
 
-  const cronExpr = buildCronExpression(process.env.DAILY_SYNC_TIME);
+  const schedules = parseSyncTimes(process.env.DAILY_SYNC_TIME);
 
-  // Startup banner — hiển thị ngay khi server khởi động
+  // Startup banner
   console.log('━'.repeat(52));
   console.log(`[DailySync] Scheduler READY`);
-  console.log(`[DailySync] Cron   : ${cronExpr} (${process.env.DAILY_SYNC_TIME} Mon–Fri ICT)`);
+  schedules.forEach(({ time, cronExpr }) =>
+    console.log(`[DailySync] Cron   : ${cronExpr} (${time} Mon–Fri ICT)`)
+  );
   console.log(`[DailySync] Sources: ${ACTIVE_SOURCES.join(', ')}`);
   console.log('━'.repeat(52));
 
-  // Ghi vào AuditLog để track từ UI
   AuditLog.create({
     action:      'scheduler_started',
     status:      'success',
-    details:     { sources: ACTIVE_SOURCES, cronExpr, syncTime: process.env.DAILY_SYNC_TIME },
+    details:     { sources: ACTIVE_SOURCES, syncTimes: schedules.map(s => s.time) },
     triggeredBy: 'system'
-  }).catch(() => {}); // không block startup nếu DB chưa kết nối
+  }).catch(() => {});
 
-  cron.schedule(cronExpr, () => {
-    runDailySync().catch(err =>
-      console.error('[DailySync] Unhandled error:', err.message)
-    );
-  }, { timezone: 'Asia/Ho_Chi_Minh' });
+  schedules.forEach(({ time, cronExpr }) => {
+    cron.schedule(cronExpr, () => {
+      console.log(`[DailySync] Triggered by schedule: ${time}`);
+      runDailySync().catch(err =>
+        console.error('[DailySync] Unhandled error:', err.message)
+      );
+    }, { timezone: 'Asia/Ho_Chi_Minh' });
+  });
 }
 
 module.exports = { startScheduler, runDailySync };
