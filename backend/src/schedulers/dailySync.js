@@ -9,6 +9,7 @@ const vndirectService  = require('../services/vndirectService');
 const tcbsService      = require('../services/tcbsService');
 const comparisonService = require('../services/comparisonService');
 const alertService     = require('../services/alertService');
+const vciService       = require('../services/vciService');
 const slackService     = require('../services/slackService');
 
 // Đọc giờ sync từ env: "15:30" → cron "30 15 * * 1-5"
@@ -20,7 +21,7 @@ function buildCronExpression(timeStr) {
 async function runDailySync() {
   const date      = new Date().toISOString().split('T')[0];
   const startTime = Date.now();
-  const summary   = { date, kis: null, vps: null, kbs: null, vndirect: null, tcbs: null, comparison: null, alerts: 0 };
+  const summary   = { date, kis: null, vps: null, kbs: null, vndirect: null, tcbs: null, vci: null, comparison: null, alerts: 0 };
 
   console.log(`[DailySync] Starting for ${date}...`);
 
@@ -79,6 +80,16 @@ async function runDailySync() {
     console.error(`[DailySync] TCBS failed:`, e.message);
   }
 
+  // 5b. VCI — lấy symbols từ KIS đã sync
+  try {
+    const symbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
+    summary.vci   = await vciService.syncPrices(date, symbols);
+    console.log(`[DailySync] VCI done:`, summary.vci);
+  } catch (e) {
+    summary.vci = { error: e.message };
+    console.error(`[DailySync] VCI failed:`, e.message);
+  }
+
   // 6. Comparison — delay 3s để đảm bảo tất cả bulk writes đã được index trên Atlas
   await new Promise(r => setTimeout(r, 3000));
   try {
@@ -128,7 +139,7 @@ async function runDailySync() {
   console.log(`[DailySync] Finished in ${duration}ms. Discrepancies: ${summary.comparison?.withDiscrepancy ?? 0}`);
 }
 
-const ACTIVE_SOURCES = ['kis', 'vps', 'kbs']; // cập nhật khi thêm/bớt source
+const ACTIVE_SOURCES = ['kis', 'vps', 'kbs', 'vci']; // cập nhật khi thêm/bớt source
 
 function startScheduler() {
   if (process.env.DAILY_SYNC_ENABLED !== 'true') {
