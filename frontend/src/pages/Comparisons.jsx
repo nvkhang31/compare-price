@@ -22,14 +22,16 @@ const SOURCE_LABELS = {
   vps:      'VPS',
   kbs:      'KBS',
   vndirect: 'VNDirect',
-  tcbs:     'TCBS'
+  tcbs:     'TCBS',
+  vci:      'VCI'
 }
 
 const SOURCE_COLORS = {
   vps:      { header: 'text-violet-600', bg: 'bg-violet-50/60', border: 'border-violet-100' },
   kbs:      { header: 'text-teal-600',   bg: 'bg-teal-50/60',   border: 'border-teal-100'   },
   vndirect: { header: 'text-orange-600', bg: 'bg-orange-50/60', border: 'border-orange-100' },
-  tcbs:     { header: 'text-pink-600',   bg: 'bg-pink-50/60',   border: 'border-pink-100'   }
+  tcbs:     { header: 'text-pink-600',   bg: 'bg-pink-50/60',   border: 'border-pink-100'   },
+  vci:      { header: 'text-sky-600',    bg: 'bg-sky-50/60',    border: 'border-sky-100'    }
 }
 
 function KisPriceCell({ value }) {
