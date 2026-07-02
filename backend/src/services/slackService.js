@@ -12,7 +12,7 @@ const SEVERITY_EMOJI = {
   info:     ':large_blue_circle:'
 };
 
-const SOURCE_LABELS = { vps: 'VPS', kbs: 'KBS', vndirect: 'VNDirect', tcbs: 'TCBS', ssi: 'SSI' };
+const SOURCE_LABELS = { vps: 'VPS', kbs: 'KBS', vndirect: 'VNDirect', tcbs: 'TCBS', ssi: 'SSI', vci: 'VCI' };
 
 function getSeverity(diffPct) {
   const critical = parseFloat(process.env.ALERT_CRITICAL_THRESHOLD || 0.05) * 100;
@@ -138,4 +138,95 @@ async function sendDiscrepancyAlert({ date, discrepant, summary }) {
   return { sent: true };
 }
 
-module.exports = { sendDiscrepancyAlert };
+function buildSourceRow(key, data) {
+  const label = SOURCE_LABELS[key] ?? key.toUpperCase();
+  if (!data || data.error) {
+    return { type: 'mrkdwn', text: `:x: *${label}*\n${data?.error ? 'Error' : 'No data'}` };
+  }
+  return { type: 'mrkdwn', text: `:white_check_mark: *${label}*\n${data.total.toLocaleString('en-US')} symbols` };
+}
+
+function buildMorningSummaryPayload({ date, summary }) {
+  const appUrl        = process.env.FRONTEND_URL || 'https://compare-price-blush.vercel.app';
+  const dateFormatted = new Date(date + 'T00:00:00+07:00')
+    .toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  const comp       = summary.comparison ?? {};
+  const matched    = (comp.compared ?? 0) - (comp.withDiscrepancy ?? 0);
+  const matchRate  = comp.compared > 0
+    ? ((matched / comp.compared) * 100).toFixed(1)
+    : '100.0';
+
+  const sources    = ['kis', 'vps', 'vci', 'kbs', 'vndirect', 'tcbs'];
+  const sourceFields = sources
+    .filter(k => summary[k] !== undefined && summary[k] !== null)
+    .map(k => buildSourceRow(k, summary[k]));
+
+  return {
+    text: `:sunrise: KIS Morning Price Summary — ${dateFormatted}`,
+    blocks: [
+      {
+        type: 'header',
+        text: { type: 'plain_text', text: ':sunrise: KIS Morning Price Summary — 08:15 ICT', emoji: true }
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `:calendar: *Trading Date*\n${dateFormatted}` },
+          { type: 'mrkdwn', text: `:bar_chart: *Total Symbols*\n${(comp.total ?? 0).toLocaleString('en-US')}` },
+          { type: 'mrkdwn', text: `:white_check_mark: *Matched*\n${matched.toLocaleString('en-US')} (${matchRate}%)` },
+          { type: 'mrkdwn', text: comp.withDiscrepancy > 0
+              ? `:red_circle: *Discrepant*\n${comp.withDiscrepancy}`
+              : `:large_green_circle: *Discrepant*\n0`
+          }
+        ]
+      },
+      { type: 'divider' },
+      {
+        type: 'section',
+        text: { type: 'mrkdwn', text: '*Symbol Count per Source:*' }
+      },
+      {
+        type: 'section',
+        fields: sourceFields.slice(0, 6)
+      },
+      { type: 'divider' },
+      {
+        type: 'actions',
+        elements: [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'View Price Comparisons', emoji: true },
+            url: `${appUrl}/comparisons`,
+            style: 'primary'
+          }
+        ]
+      },
+      {
+        type: 'context',
+        elements: [
+          { type: 'mrkdwn', text: ':robot_face: Automated morning sync by KIS Price Comparison Tool | 08:15 ICT Mon-Fri' }
+        ]
+      }
+    ]
+  };
+}
+
+async function sendMorningSummary({ date, summary }) {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.warn('[SlackService] Skipping morning summary — SLACK_WEBHOOK_URL not configured');
+    return { skipped: true };
+  }
+
+  const payload = buildMorningSummaryPayload({ date, summary });
+  await axios.post(webhookUrl, payload, {
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 10000
+  });
+
+  console.log(`[SlackService] Morning summary sent for ${date}`);
+  return { sent: true };
+}
+
+module.exports = { sendDiscrepancyAlert, sendMorningSummary };
