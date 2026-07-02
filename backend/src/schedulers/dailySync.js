@@ -21,12 +21,12 @@ function parseSyncTimes(envValue) {
   });
 }
 
-async function runDailySync() {
+async function runDailySync(triggeredTime = null) {
   const date      = new Date().toISOString().split('T')[0];
   const startTime = Date.now();
   const summary   = { date, kis: null, vps: null, kbs: null, vndirect: null, tcbs: null, vci: null, comparison: null, alerts: 0 };
 
-  console.log(`[DailySync] Starting for ${date}...`);
+  console.log(`[DailySync] Starting for ${date}${triggeredTime ? ` (schedule: ${triggeredTime})` : ''}...`);
 
   await AuditLog.create({
     action:      'daily_sync_started',
@@ -115,15 +115,17 @@ async function runDailySync() {
     console.error(`[DailySync] Alert failed:`, e.message);
   }
 
-  // 8. Slack notification — gửi khi có sai lệch
+  // 8. Slack notification
+  // - Morning sync (08:15): always send summary report
+  // - Afternoon sync (15:30): only send if discrepancies found
   try {
-    if (discrepant.length > 0) {
+    const isMorning = triggeredTime === '08:15';
+    if (isMorning) {
+      const result = await slackService.sendMorningSummary({ date, summary });
+      if (!result.skipped) console.log(`[DailySync] Slack morning summary sent`);
+    } else if (discrepant.length > 0) {
       const result = await slackService.sendDiscrepancyAlert({ date, discrepant, summary });
-      if (result.skipped) {
-        console.log('[DailySync] Slack skipped (not configured)');
-      } else {
-        console.log(`[DailySync] Slack sent — ${discrepant.length} discrepancies notified`);
-      }
+      if (!result.skipped) console.log(`[DailySync] Slack alert sent — ${discrepant.length} discrepancies`);
     }
   } catch (e) {
     console.error(`[DailySync] Slack failed:`, e.message);
@@ -171,7 +173,7 @@ function startScheduler() {
   schedules.forEach(({ time, cronExpr }) => {
     cron.schedule(cronExpr, () => {
       console.log(`[DailySync] Triggered by schedule: ${time}`);
-      runDailySync().catch(err =>
+      runDailySync(time).catch(err =>
         console.error('[DailySync] Unhandled error:', err.message)
       );
     }, { timezone: 'Asia/Ho_Chi_Minh' });
