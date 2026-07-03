@@ -119,7 +119,10 @@ async function runDailySync(triggeredTime = null) {
   // - Morning sync (08:15): always send summary report
   // - Afternoon sync (15:30): only send if discrepancies found
   try {
-    const isMorning = triggeredTime === '08:15';
+    const hourICT   = triggeredTime
+      ? parseInt(triggeredTime.split(':')[0])
+      : (new Date().getUTCHours() + 7) % 24;
+    const isMorning = hourICT < 12;
     if (isMorning) {
       const result = await slackService.sendMorningSummary({ date, summary });
       if (!result.skipped) console.log(`[DailySync] Slack morning summary sent`);
