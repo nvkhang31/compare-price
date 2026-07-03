@@ -1,0 +1,35 @@
+name: Morning sync trigger
+
+on:
+  schedule:
+    # 01:15 UTC = 08:15 ICT, Mon–Fri
+    - cron: '15 1 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    name: Wake server and trigger morning sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up Render server
+        run: |
+          echo "Pinging server to wake up..."
+          curl -s -o /dev/null --max-time 60 https://compare-price-lel6.onrender.com/api/health
+          echo "Waiting 20s for server to fully initialize..."
+          sleep 20
+
+      - name: Trigger morning sync
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            --max-time 30 \
+            https://compare-price-lel6.onrender.com/api/prices/sync)
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -1)
+          echo "HTTP status: $http_code"
+          echo "Response: $body"
+          if [ "$http_code" != "200" ]; then
+            echo "Sync trigger failed"
+            exit 1
+          fi
+          echo "Morning sync triggered successfully"
