@@ -23,7 +23,7 @@ const SOURCE_LABELS = {
   kbs:      'KBS',
   vndirect: 'VNDirect',
   tcbs:     'TCBS',
-  vci:      'VCI'
+  vci:      'VietCap'
 }
 
 const SOURCE_COLORS = {

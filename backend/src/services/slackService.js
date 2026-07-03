@@ -12,7 +12,7 @@ const SEVERITY_EMOJI = {
   info:     ':large_blue_circle:'
 };
 
-const SOURCE_LABELS = { vps: 'VPS', kbs: 'KBS', vndirect: 'VNDirect', tcbs: 'TCBS', ssi: 'SSI', vci: 'VCI' };
+const SOURCE_LABELS = { vps: 'VPS', kbs: 'KBS', ssi: 'SSI', vci: 'VietCap' };
 
 function getSeverity(diffPct) {
   const critical = parseFloat(process.env.ALERT_CRITICAL_THRESHOLD || 0.05) * 100;
@@ -157,7 +157,7 @@ function buildMorningSummaryPayload({ date, summary }) {
     ? ((matched / comp.compared) * 100).toFixed(1)
     : '100.0';
 
-  const sources    = ['kis', 'vps', 'vci', 'kbs', 'vndirect', 'tcbs'];
+  const sources    = ['kis', 'vps', 'vci', 'kbs'];
   const sourceFields = sources
     .filter(k => summary[k] !== undefined && summary[k] !== null)
     .map(k => buildSourceRow(k, summary[k]));
