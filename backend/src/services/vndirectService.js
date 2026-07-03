@@ -7,7 +7,7 @@ const PAGE_SIZE = 1000;
 class VNDirectService {
   constructor() {
     this.baseURL = process.env.VNDIRECT_API_URL || 'https://finfo-api.vndirect.com.vn';
-    this.timeout = 30000;
+    this.timeout = 10000;
   }
 
   async fetchPage(date, page) {
@@ -62,7 +62,7 @@ class VNDirectService {
     try {
       await axios.get(`${this.baseURL}/v4/stock_prices/`, {
         params: { q: `date:${date}`, size: 1, page: 1 },
-        timeout: 20000,
+        timeout: 10000,
         headers: { 'User-Agent': 'Mozilla/5.0' }
       });
     } catch (probeErr) {

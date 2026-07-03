@@ -44,57 +44,30 @@ async function runDailySync(triggeredTime = null) {
     console.error(`[DailySync] KIS failed:`, e.message);
   }
 
-  // 2. VPS — dùng symbols từ KIS làm danh sách
-  try {
-    const symbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
-    summary.vps   = await vpsService.syncPrices(date, symbols);
-    console.log(`[DailySync] VPS done:`, summary.vps);
-  } catch (e) {
-    summary.vps = { error: e.message };
-    console.error(`[DailySync] VPS failed:`, e.message);
-  }
+  // 2. Get KIS symbols once, then run all competitor sources in parallel
+  const kisSymbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
 
-  // 3. KBS — dùng symbols từ KIS làm danh sách
-  try {
-    const symbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
-    summary.kbs   = await kbsService.syncPrices(date, symbols);
-    console.log(`[DailySync] KBS done:`, summary.kbs);
-  } catch (e) {
-    summary.kbs = { error: e.message };
-    console.error(`[DailySync] KBS failed:`, e.message);
-  }
+  const [vpsRes, vciRes, kbsRes, vndirectRes, tcbsRes] = await Promise.allSettled([
+    vpsService.syncPrices(date, kisSymbols),
+    vciService.syncPrices(date, kisSymbols),
+    kbsService.syncPrices(date, kisSymbols),
+    vndirectService.syncPrices(date),
+    tcbsService.syncPrices(date, kisSymbols)
+  ]);
 
-  // 4. VNDirect
-  try {
-    summary.vndirect = await vndirectService.syncPrices(date);
-    console.log(`[DailySync] VNDirect done:`, summary.vndirect);
-  } catch (e) {
-    summary.vndirect = { error: e.message };
-    console.error(`[DailySync] VNDirect failed:`, e.message);
-  }
+  summary.vps      = vpsRes.status      === 'fulfilled' ? vpsRes.value      : { error: vpsRes.reason?.message };
+  summary.vci      = vciRes.status      === 'fulfilled' ? vciRes.value      : { error: vciRes.reason?.message };
+  summary.kbs      = kbsRes.status      === 'fulfilled' ? kbsRes.value      : { error: kbsRes.reason?.message };
+  summary.vndirect = vndirectRes.status === 'fulfilled' ? vndirectRes.value : { error: vndirectRes.reason?.message };
+  summary.tcbs     = tcbsRes.status     === 'fulfilled' ? tcbsRes.value     : { error: tcbsRes.reason?.message };
 
-  // 5. TCBS — lấy symbols từ KIS đã sync
-  try {
-    const symbols    = await StockPrice.distinct('symbol', { date, source: 'kis' });
-    summary.tcbs     = await tcbsService.syncPrices(date, symbols);
-    console.log(`[DailySync] TCBS done:`, summary.tcbs);
-  } catch (e) {
-    summary.tcbs = { error: e.message };
-    console.error(`[DailySync] TCBS failed:`, e.message);
-  }
+  console.log(`[DailySync] VPS:`, summary.vps);
+  console.log(`[DailySync] VCI:`, summary.vci);
+  console.log(`[DailySync] KBS:`, summary.kbs);
+  console.log(`[DailySync] VNDirect:`, summary.vndirect);
+  console.log(`[DailySync] TCBS:`, summary.tcbs);
 
-  // 5b. VCI — lấy symbols từ KIS đã sync
-  try {
-    const symbols = await StockPrice.distinct('symbol', { date, source: 'kis' });
-    summary.vci   = await vciService.syncPrices(date, symbols);
-    console.log(`[DailySync] VCI done:`, summary.vci);
-  } catch (e) {
-    summary.vci = { error: e.message };
-    console.error(`[DailySync] VCI failed:`, e.message);
-  }
-
-  // 6. Comparison — delay 3s để đảm bảo tất cả bulk writes đã được index trên Atlas
-  await new Promise(r => setTimeout(r, 3000));
+  // 6. Comparison
   try {
     summary.comparison = await comparisonService.compareAll(date);
     console.log(`[DailySync] Comparison done:`, summary.comparison);
