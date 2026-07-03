@@ -15,10 +15,12 @@ class KISService {
         headers: { 'User-Agent': 'Mozilla/5.0' }
       })
     );
-    // Keep all tradable listed instruments: stocks, ETFs, futures, covered warrants
-    // Exclude BOND (placeholder ceiling=999999999), INDEX (no ce/fl), and non-Listed
-    const TRADABLE_TYPES = new Set(['STOCK', 'ETF', 'FUTURES', 'CW']);
-    return response.data.filter(item => TRADABLE_TYPES.has(item.t) && item.status === 'Listed');
+    // Keep all tradable instruments: stocks, ETFs, futures, covered warrants
+    // Exclude BOND (placeholder ceiling=999999999), INDEX (no ce/fl), Suspend, FTD
+    // PCA (Price Call Auction) included — still has valid ce/fl/re (e.g. DGC in VN30)
+    const TRADABLE_TYPES    = new Set(['STOCK', 'ETF', 'FUTURES', 'CW']);
+    const TRADABLE_STATUSES = new Set(['Listed', 'PCA']);
+    return response.data.filter(item => TRADABLE_TYPES.has(item.t) && TRADABLE_STATUSES.has(item.status));
   }
 
   transform(item, date) {
