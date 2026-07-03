@@ -7,7 +7,7 @@ const CONCURRENCY = 10; // số request song song
 class TCBSService {
   constructor() {
     this.baseURL = process.env.TCBS_API_URL || 'https://apipubaws.tcbs.com.vn';
-    this.timeout = 15000;
+    this.timeout = 8000;
   }
 
   async fetchQuote(symbol) {

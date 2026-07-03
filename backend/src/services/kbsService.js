@@ -5,7 +5,7 @@ const BASE_URL = 'https://kbbuddywts.kbsec.com.vn/iis-server/investment';
 
 class KBSService {
   constructor() {
-    this.timeout = 30000;
+    this.timeout = 10000;
   }
 
   async fetchAllPrices() {
