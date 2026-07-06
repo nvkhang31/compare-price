@@ -14,12 +14,14 @@ const comparisonsRouter = require('./src/routes/comparisons');
 const alertsRouter      = require('./src/routes/alerts');
 const auditLogsRouter   = require('./src/routes/auditLogs');
 const statsRouter       = require('./src/routes/stats');
+const configRouter      = require('./src/routes/config');
 
 // Models — imported here so Mongoose registers schemas and creates indexes on startup
 require('./src/models/StockPrice');
 require('./src/models/Comparison');
 require('./src/models/Alert');
 require('./src/models/AuditLog');
+require('./src/models/Config');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -46,6 +48,7 @@ app.use('/api/comparisons', comparisonsRouter);
 app.use('/api/alerts',      alertsRouter);
 app.use('/api/audit-logs',  auditLogsRouter);
 app.use('/api/stats',       statsRouter);
+app.use('/api/config',      configRouter);
 
 // 404 handler
 app.use((req, res) => {
@@ -55,9 +58,22 @@ app.use((req, res) => {
 // Global error handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT} [${process.env.NODE_ENV}]`);
   startScheduler();
+
+  // Seed VN30 list into DB on first startup if not present
+  try {
+    const { getVN30Symbols, refreshVN30, FALLBACK_VN30 } = require('./src/services/indexService');
+    const Config = require('./src/models/Config');
+    const existing = await Config.findOne({ key: 'vn30_symbols' });
+    if (!existing) {
+      await Config.create({ key: 'vn30_symbols', value: FALLBACK_VN30, updatedAt: new Date() });
+      console.log('[Server] VN30 fallback list seeded to DB');
+    }
+  } catch (e) {
+    console.warn('[Server] VN30 seed failed (non-fatal):', e.message);
+  }
 });
 
 module.exports = app;

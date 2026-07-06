@@ -11,6 +11,7 @@ const comparisonService = require('../services/comparisonService');
 const alertService     = require('../services/alertService');
 const vciService       = require('../services/vciService');
 const slackService     = require('../services/slackService');
+const indexService     = require('../services/indexService');
 
 // Parse "08:15,15:30" → [{ time, cronExpr }]
 function parseSyncTimes(envValue) {
@@ -42,6 +43,13 @@ async function runDailySync(triggeredTime = null) {
   } catch (e) {
     summary.kis = { error: e.message };
     console.error(`[DailySync] KIS failed:`, e.message);
+  }
+
+  // 1b. Refresh VN30 constituent list from KIS/VCI data
+  try {
+    await indexService.refreshVN30();
+  } catch (e) {
+    console.warn(`[DailySync] VN30 refresh failed (non-fatal):`, e.message);
   }
 
   // 2. Get KIS symbols once, then run all competitor sources in parallel
