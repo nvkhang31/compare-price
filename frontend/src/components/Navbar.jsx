@@ -11,7 +11,6 @@ import {
   Moon,
   Sun
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import api from '../services/api'
 
 function ThemeToggle() {
@@ -29,10 +28,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className={cn(
-        'w-8 h-8 flex items-center justify-center rounded-lg border transition-colors duration-150',
-        'border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
-      )}
+      className="w-8 h-8 flex items-center justify-center rounded-lg nav-ctrl-btn"
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
@@ -53,23 +49,19 @@ function LangToggle() {
   return (
     <button
       onClick={toggle}
-      className={cn(
-        'flex items-center gap-0.5 rounded-lg border text-xs font-semibold tracking-wide',
-        'overflow-hidden transition-colors duration-150',
-        'border-slate-700 bg-slate-800'
-      )}
+      className="flex items-center gap-0.5 rounded-lg overflow-hidden nav-ctrl-btn"
       title={isVI ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
     >
-      <span className={cn(
-        'px-2 py-1.5 transition-colors duration-150',
-        isVI ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
-      )}>
+      <span className={isVI
+        ? 'px-2 py-1.5 text-xs font-semibold tracking-wide bg-blue-600 text-white'
+        : 'px-2 py-1.5 text-xs font-semibold tracking-wide nav-lang-seg'
+      }>
         VIE
       </span>
-      <span className={cn(
-        'px-2 py-1.5 transition-colors duration-150',
-        !isVI ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
-      )}>
+      <span className={!isVI
+        ? 'px-2 py-1.5 text-xs font-semibold tracking-wide bg-blue-600 text-white'
+        : 'px-2 py-1.5 text-xs font-semibold tracking-wide nav-lang-seg'
+      }>
         ENG
       </span>
     </button>
@@ -106,37 +98,30 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+    <nav className="nav-bar sticky top-0 z-50">
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-15">
 
           {/* Logo */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center shadow-md">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-md">
               <TrendingUp size={16} className="text-white" strokeWidth={2.5} />
             </div>
             <div className="leading-tight">
-              <p className="text-white font-semibold text-sm tracking-wide">KIS Price Tool</p>
-              <p className="text-slate-400 text-[10px]">Price Comparison</p>
+              <p style={{ color: 'var(--nav-logo-t)' }} className="font-semibold text-sm tracking-wide">KIS Price Tool</p>
+              <p style={{ color: 'var(--nav-logo-sub)' }} className="text-[10px]">Price Comparison</p>
             </div>
           </div>
 
-          {/* Nav links */}
-          <div className="flex items-center gap-0.5">
+          {/* Nav links — pill container */}
+          <div className="nav-pill-wrap">
             {links.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors duration-150',
-                    isActive
-                      ? 'bg-blue-600/20 text-blue-400 font-medium'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
-                  )
-                }
+                className={({ isActive }) => isActive ? 'nav-link-active' : 'nav-link'}
               >
-                <Icon size={15} strokeWidth={1.8} />
+                <Icon size={14} strokeWidth={1.8} />
                 <span>{label}</span>
               </NavLink>
             ))}
@@ -148,12 +133,13 @@ export default function Navbar() {
             <LangToggle />
 
             {msg && (
-              <span className={cn(
-                'text-xs font-medium px-2 py-1 rounded',
-                msgType === 'error'
-                  ? 'bg-red-500/15 text-red-400'
-                  : 'bg-green-500/15 text-green-400'
-              )}>
+              <span
+                className="text-xs font-medium px-2 py-1 rounded"
+                style={{
+                  color:      msgType === 'error' ? 'var(--red-strong)'  : 'var(--green-strong)',
+                  background: msgType === 'error' ? 'var(--tint-red)'    : 'var(--tint-green)'
+                }}
+              >
                 {msg}
               </span>
             )}
@@ -161,11 +147,7 @@ export default function Navbar() {
             <button
               onClick={handleSync}
               disabled={syncing}
-              className={cn(
-                'flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-medium transition-all duration-150',
-                'bg-blue-600 hover:bg-blue-500 text-white shadow-sm',
-                'disabled:opacity-60 disabled:cursor-not-allowed'
-              )}
+              className="sync-btn flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium"
             >
               <RefreshCw size={14} strokeWidth={2} className={syncing ? 'animate-spin' : ''} />
               <span>{syncing ? t('nav.syncing') : t('nav.syncNow')}</span>
