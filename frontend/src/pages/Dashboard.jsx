@@ -200,12 +200,12 @@ export default function Dashboard() {
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--t-faint)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--t-faint)' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(127,127,127,0.07)' }} />
                 <Bar dataKey="discrepancies" radius={[5, 5, 0, 0]} maxBarSize={40}>
                   {trendData.map((entry, i) => (
-                    <Cell key={i} fill={entry.discrepancies > 0 ? '#f87171' : '#bfdbfe'} />
+                    <Cell key={i} fill={entry.discrepancies > 0 ? 'var(--chart-bar-warn)' : 'var(--chart-bar)'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -249,18 +249,16 @@ export default function Dashboard() {
               {alerts.map(a => (
                 <div
                   key={a._id}
-                  className={cn(
-                    'flex items-center justify-between px-3 py-2.5 rounded-lg text-sm',
-                    a.severity === 'critical' ? 'bg-red-50' : 'bg-amber-50/60'
-                  )}
+                  style={{ background: a.severity === 'critical' ? 'var(--tint-red)' : 'var(--tint-amber)' }}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-800 w-10 shrink-0">{a.symbol}</span>
+                    <span style={{ color: 'var(--t-strong)' }} className="font-semibold w-10 shrink-0">{a.symbol}</span>
                     <AlertBadge type={a.severity} />
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-red-600 font-medium">{a.differencePercent?.toFixed(2)}%</span>
-                    <span className="text-gray-400">{a.date}</span>
+                    <span style={{ color: 'var(--red-strong)' }} className="font-medium">{a.differencePercent?.toFixed(2)}%</span>
+                    <span style={{ color: 'var(--t-faint)' }}>{a.date}</span>
                   </div>
                 </div>
               ))}

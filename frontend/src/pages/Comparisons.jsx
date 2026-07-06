@@ -78,13 +78,14 @@ function StatusBadge({ row }) {
 }
 
 function ExchangeBadge({ exchange }) {
-  const colors = {
-    HOSE:  'bg-blue-50 text-blue-600',
-    HNX:   'bg-purple-50 text-purple-600',
-    UPCOM: 'bg-gray-100 text-gray-500'
+  const styles = {
+    HOSE:  { background: 'var(--tint-blue)',   color: 'var(--blue)'   },
+    HNX:   { background: 'var(--tint-violet)', color: 'var(--violet)' },
+    UPCOM: { background: 'var(--bd)',          color: 'var(--t-mid)'  }
   }
+  const s = styles[exchange] ?? { background: 'var(--bd)', color: 'var(--t-faint)' }
   return (
-    <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide', colors[exchange] ?? 'bg-gray-100 text-gray-400')}>
+    <span style={s} className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide">
       {exchange}
     </span>
   )
@@ -99,7 +100,7 @@ function PaginationButton({ children, onClick, disabled, active }) {
         'w-8 h-8 flex items-center justify-center rounded-lg text-sm transition-colors',
         active
           ? 'bg-blue-600 text-white font-medium shadow-sm'
-          : 'border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed'
+          : 'page-btn disabled:opacity-40 disabled:cursor-not-allowed'
       )}
     >
       {children}
@@ -329,12 +330,15 @@ export default function Comparisons() {
                   <th className="px-4 py-2.5 font-medium text-center text-xs uppercase tracking-wide">{t('comparisons.status')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100">
                 {data.map(row => {
                   const isDiscrepant = row.hasDiscrepancy
                   return (
-                    <tr key={row._id} className={cn('hover:bg-blue-50/30 transition-colors duration-100', isDiscrepant && 'bg-red-50/40')}>
-                      <td className={cn('px-4 py-2.5 font-semibold text-gray-800 sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]', isDiscrepant ? 'bg-red-50/70' : 'bg-white')}>
+                    <tr key={row._id} className={cn('comp-row', isDiscrepant && 'comp-row-disc')}>
+                      <td
+                        className="px-4 py-2.5 font-semibold text-gray-800 sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]"
+                        style={{ background: isDiscrepant ? 'color-mix(in srgb, var(--card) 90%, var(--red))' : 'var(--card)' }}
+                      >
                         {row.symbol}
                       </td>
                       <td className="px-3 py-2.5"><ExchangeBadge exchange={row.exchange} /></td>

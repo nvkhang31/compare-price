@@ -7,10 +7,38 @@ import {
   Bell,
   ScrollText,
   RefreshCw,
-  TrendingUp
+  TrendingUp,
+  Moon,
+  Sun
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import api from '../services/api'
+
+function ThemeToggle() {
+  const [isDark, setIsDark] = useState(
+    () => document.body.classList.contains('dark')
+  )
+
+  const toggle = () => {
+    const next = !isDark
+    setIsDark(next)
+    document.body.classList.toggle('dark', next)
+    localStorage.setItem('app-theme', next ? 'dark' : 'light')
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className={cn(
+        'w-8 h-8 flex items-center justify-center rounded-lg border transition-colors duration-150',
+        'border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+      )}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
+    </button>
+  )
+}
 
 function LangToggle() {
   const { i18n } = useTranslation()
@@ -114,8 +142,9 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Right side: lang toggle + sync */}
+          {/* Right side: theme toggle + lang toggle + sync */}
           <div className="flex items-center gap-3 shrink-0">
+            <ThemeToggle />
             <LangToggle />
 
             {msg && (

@@ -7,6 +7,12 @@
     <title>Price Comparison Tool</title>
   </head>
   <body>
+    <script>
+      (function () {
+        if (localStorage.getItem('app-theme') === 'dark')
+          document.body.classList.add('dark');
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
