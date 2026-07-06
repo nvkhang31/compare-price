@@ -8,7 +8,7 @@ import AuditLog from './pages/AuditLog'
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen" style={{ background: 'var(--pg)', transition: 'background-color 0.2s ease' }}>
         <Navbar />
         <main className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6">
           <Routes>
