@@ -1,22 +1,8 @@
-const express    = require('express');
-const router     = express.Router();
-const Comparison = require('../models/Comparison');
-const StockPrice = require('../models/StockPrice');
-
-// Danh sách VN30 (cập nhật theo kỳ review của HoSE)
-// VN30 cập nhật tháng 6/2026 (nguồn: HOSE)
-const VN30_SYMBOLS = [
-  // Ngân hàng (14)
-  'ACB','BID','CTG','HDB','LPB','MBB','SHB','SSB','STB','TCB','TPB','VCB','VIB','VPB',
-  // Bất động sản & Dịch vụ (4)
-  'VIC','VHM','VRE','VPL',
-  // Tiêu dùng & Công nghệ (5)
-  'FPT','MSN','MWG','SAB','VNM',
-  // Năng lượng & Tài nguyên (5)
-  'GAS','GVR','HPG','PLX','DGC',
-  // Tài chính & Hàng không (2)
-  'SSI','VJC'
-];
+const express       = require('express');
+const router        = express.Router();
+const Comparison    = require('../models/Comparison');
+const StockPrice    = require('../models/StockPrice');
+const indexService  = require('../services/indexService');
 
 // GET /api/comparisons?date=2026-06-25&hasDiscrepancy=true&exchange=HOSE&vn30=true&symbol=ACB&limit=100&page=1
 router.get('/', async (req, res, next) => {
@@ -26,7 +12,8 @@ router.get('/', async (req, res, next) => {
     if (date)     filter.date     = date;
     if (symbol)   filter.symbol   = { $regex: `^${symbol.toUpperCase()}` };
     if (vn30 === 'true') {
-      filter.symbol = { $in: VN30_SYMBOLS };
+      const vn30Symbols  = await indexService.getVN30Symbols();
+      filter.symbol = { $in: vn30Symbols };
     } else if (exchange) {
       filter.exchange = exchange.toUpperCase();
     }
