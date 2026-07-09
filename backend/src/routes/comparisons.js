@@ -68,6 +68,59 @@ router.get('/summary', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/comparisons/analytics?date=2026-07-09
+router.get('/analytics', async (req, res, next) => {
+  try {
+    const { date } = req.query
+    const d = date || new Date().toISOString().split('T')[0]
+
+    const [sourceStats, topSymbols] = await Promise.all([
+      // Per-source discrepancy count
+      Comparison.aggregate([
+        { $match: { date: d, hasDiscrepancy: true } },
+        { $unwind: '$discrepantSources' },
+        { $group: { _id: '$discrepantSources', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $project: { _id: 0, source: '$_id', count: 1 } }
+      ]),
+      // Top 10 symbols by max diffPct across all sources and fields
+      Comparison.aggregate([
+        { $match: { date: d, hasDiscrepancy: true } },
+        {
+          $addFields: {
+            maxDiffPct: {
+              $max: {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: '$comparisons',
+                      as: 'comp',
+                      cond: '$$comp.hasDiscrepancy'
+                    }
+                  },
+                  as: 'comp',
+                  in: {
+                    $max: [
+                      { $abs: { $ifNull: ['$$comp.ceiling.diffPct',   0] } },
+                      { $abs: { $ifNull: ['$$comp.floor.diffPct',     0] } },
+                      { $abs: { $ifNull: ['$$comp.reference.diffPct', 0] } }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        { $sort: { maxDiffPct: -1 } },
+        { $limit: 10 },
+        { $project: { _id: 0, symbol: 1, exchange: 1, maxDiffPct: 1, discrepantSources: 1 } }
+      ])
+    ])
+
+    res.json({ success: true, data: { sourceStats, topSymbols } })
+  } catch (err) { next(err) }
+})
+
 // GET /api/comparisons/:symbol
 router.get('/:symbol', async (req, res, next) => {
   try {

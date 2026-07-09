@@ -23,8 +23,8 @@ router.get('/', async (req, res, next) => {
       StockPrice.distinct('source', { date: today }),
       Comparison.countDocuments({ date: today, hasDiscrepancy: true }),
       Comparison.countDocuments({ date: today }),
-      Alert.countDocuments({ status: 'open' }),
-      Alert.countDocuments({ status: 'open', severity: 'critical' }),
+      Alert.countDocuments({ status: 'open', date: today }),
+      Alert.countDocuments({ status: 'open', severity: 'critical', date: today }),
       AuditLog.findOne({ action: 'daily_sync_completed' }).sort({ timestamp: -1 }).lean()
     ]);
 
