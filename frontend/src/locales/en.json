@@ -30,7 +30,19 @@
     "viewAll": "View all",
     "noAlerts": "No alerts",
     "allMatch": "All prices are matching",
-    "limitedSources": "Active: <strong>{{sources}}</strong>. VNDirect and TCBS are unavailable — comparison will improve with more sources."
+    "limitedSources": "Active: <strong>{{sources}}</strong>. VNDirect and TCBS are unavailable — comparison will improve with more sources.",
+    "sourceBreakdownTitle": "Discrepancies by source",
+    "sourceBreakdownSub": "Symbols with price discrepancies per source today",
+    "sourceBreakdownEmpty": "No discrepancies",
+    "sourceBreakdownEmptySub": "All sources are consistent today",
+    "topSymbolsTitle": "Top 10 most discrepant symbols",
+    "topSymbolsSub": "Ranked by highest deviation % today",
+    "topSymbolsEmpty": "No discrepancies",
+    "topSymbolsEmptySub": "All symbols are matching today",
+    "colSymbol": "Symbol",
+    "colExchange": "Exchange",
+    "colSources": "Discrepant sources",
+    "colMaxDiff": "Max diff%"
   },
   "comparisons": {
     "title": "Price Comparison",

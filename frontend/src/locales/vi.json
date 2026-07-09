@@ -30,7 +30,19 @@
     "viewAll": "Xem tất cả",
     "noAlerts": "Không có cảnh báo",
     "allMatch": "Tất cả giá đang khớp nhau",
-    "limitedSources": "Đang hoạt động: <strong>{{sources}}</strong>. VNDirect và TCBS chưa khả dụng — so sánh sẽ đầy đủ hơn khi có thêm nguồn."
+    "limitedSources": "Đang hoạt động: <strong>{{sources}}</strong>. VNDirect và TCBS chưa khả dụng — so sánh sẽ đầy đủ hơn khi có thêm nguồn.",
+    "sourceBreakdownTitle": "Lệch theo nguồn",
+    "sourceBreakdownSub": "Số mã lệch giá theo từng source hôm nay",
+    "sourceBreakdownEmpty": "Không có lệch giá",
+    "sourceBreakdownEmptySub": "Tất cả source đồng nhất hôm nay",
+    "topSymbolsTitle": "Top 10 mã lệch nhiều nhất",
+    "topSymbolsSub": "Xếp hạng theo % lệch cao nhất trong ngày",
+    "topSymbolsEmpty": "Không có lệch giá",
+    "topSymbolsEmptySub": "Tất cả mã khớp giá hôm nay",
+    "colSymbol": "Mã",
+    "colExchange": "Sàn",
+    "colSources": "Source lệch",
+    "colMaxDiff": "Max lệch%"
   },
   "comparisons": {
     "title": "So sánh giá",
