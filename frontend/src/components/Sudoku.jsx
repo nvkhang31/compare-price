@@ -168,7 +168,27 @@ export default function Sudoku({ onBack }) {
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-7">
       <BackBtn />
       <div className="text-center -mt-4">
-        <p className="text-4xl mb-3">🔢</p>
+        <div className="flex justify-center mb-4">
+          <div className="game-logo-ring game-logo-ring--sudoku">
+            <div className="game-logo-ring-inner">
+              <svg width="33" height="33" viewBox="0 0 33 33" fill="none">
+                {/* 3×3 grid border */}
+                <rect x="1" y="1" width="31" height="31" rx="3" stroke="#818cf8" strokeWidth="1" fill="none" opacity="0.45" />
+                {/* Inner grid lines */}
+                <line x1="11.7" y1="1" x2="11.7" y2="32" stroke="#818cf8" strokeWidth="0.8" opacity="0.35" />
+                <line x1="21.3" y1="1" x2="21.3" y2="32" stroke="#818cf8" strokeWidth="0.8" opacity="0.35" />
+                <line x1="1" y1="11.7" x2="32" y2="11.7" stroke="#818cf8" strokeWidth="0.8" opacity="0.35" />
+                <line x1="1" y1="21.3" x2="32" y2="21.3" stroke="#818cf8" strokeWidth="0.8" opacity="0.35" />
+                {/* Numbers appearing sequentially */}
+                <text x="6.5" y="6.8" fontSize="7.5" fill="#a5b4fc" textAnchor="middle" dominantBaseline="middle" className="game-sudoku-num">5</text>
+                <text x="16.5" y="6.8" fontSize="7.5" fill="#c7d2fe" textAnchor="middle" dominantBaseline="middle" className="game-sudoku-num game-sudoku-n2">3</text>
+                <text x="26.5" y="16.5" fontSize="7.5" fill="#a5b4fc" textAnchor="middle" dominantBaseline="middle" className="game-sudoku-num game-sudoku-n3">7</text>
+                <text x="6.5" y="26.5" fontSize="7.5" fill="#c7d2fe" textAnchor="middle" dominantBaseline="middle" className="game-sudoku-num game-sudoku-n4">1</text>
+                <text x="16.5" y="26.5" fontSize="7.5" fill="#a5b4fc" textAnchor="middle" dominantBaseline="middle" className="game-sudoku-num game-sudoku-n5">9</text>
+              </svg>
+            </div>
+          </div>
+        </div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--t-strong)' }}>Sudoku</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--t-mid)' }}>
           Điền số 1–9 vào mỗi hàng, cột và ô 3×3

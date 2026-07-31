@@ -289,7 +289,29 @@ export default function Snake({ onBack }) {
         {phase === 'idle' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4"
             style={{ background: 'rgba(15,23,42,0.75)' }}>
-            <p className="text-4xl">🐍</p>
+            <div className="game-logo-ring game-logo-ring--snake">
+              <div className="game-logo-ring-inner">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  {/* S-curve body */}
+                  <path
+                    className="game-snake-body"
+                    d="M4,28 Q4,18 14,18 Q24,18 24,8 Q24,4 28,4"
+                    stroke="#2dd4bf" strokeWidth="4" strokeLinecap="round" fill="none"
+                  />
+                  {/* Head */}
+                  <circle cx="28" cy="4" r="4.5" fill="#14b8a6" />
+                  {/* Eye white */}
+                  <circle cx="29.8" cy="2.4" r="1.4" fill="white" />
+                  {/* Pupil */}
+                  <circle cx="30.2" cy="2.6" r="0.7" fill="#0f172a" />
+                  {/* Tongue */}
+                  <g className="game-snake-tongue">
+                    <line x1="28" y1="8.2" x2="26" y2="10.5" stroke="#f87171" strokeWidth="1.2" strokeLinecap="round" />
+                    <line x1="28" y1="8.2" x2="30" y2="10.5" stroke="#f87171" strokeWidth="1.2" strokeLinecap="round" />
+                  </g>
+                </svg>
+              </div>
+            </div>
             <p className="text-white font-bold text-lg">Snake</p>
             <button
               onClick={startGame}

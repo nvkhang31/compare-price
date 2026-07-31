@@ -152,7 +152,21 @@ export default function BullBear({ onBack }) {
       </button>
 
       <div className="text-center space-y-2 -mt-4">
-        <p className="text-4xl">📈</p>
+        <div className="flex justify-center mb-4">
+          <div className="game-logo-ring game-logo-ring--bull">
+            <div className="game-logo-ring-inner">
+              <svg width="32" height="22" viewBox="0 0 32 22" fill="none">
+                <polyline
+                  className="game-chart-line"
+                  points="2,18 6,12 10,15 14,7 18,10 24,4 30,2"
+                  stroke="#4ade80" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                />
+                <circle cx="30" cy="2" r="2" fill="#86efac" />
+                <circle cx="30" cy="2" r="2" fill="#86efac" className="game-chart-ping" />
+              </svg>
+            </div>
+          </div>
+        </div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--t-strong)' }}>Bull or Bear</h1>
         <p className="text-sm" style={{ color: 'var(--t-mid)' }}>
           Đoán giá TC hôm nay tăng hay giảm so với hôm qua

@@ -488,6 +488,260 @@ body.dark .stat-card:hover::after    { opacity: 0.50; }
   animation: slide-in-right 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+/* ─── Logo animated ring + live chart ────────────────────── */
+@keyframes logo-ring-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes chart-line-draw {
+  0%   { stroke-dashoffset: 30; opacity: 0; }
+  12%  { opacity: 1; }
+  72%  { stroke-dashoffset: 0;  opacity: 1; }
+  88%  { stroke-dashoffset: 0;  opacity: 0; }
+  100% { stroke-dashoffset: 0;  opacity: 0; }
+}
+
+@keyframes chart-dot-ping {
+  0%   { opacity: 0.85; transform: scale(1);   }
+  100% { opacity: 0;    transform: scale(2.8); }
+}
+
+.logo-ring {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 1.5px;
+  flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.45), 0 0 32px rgba(192, 132, 252, 0.15);
+  transition: box-shadow 0.3s ease;
+}
+
+.logo-ring:hover {
+  box-shadow: 0 0 20px rgba(129, 140, 248, 0.65), 0 0 44px rgba(192, 132, 252, 0.25);
+}
+
+.logo-ring::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 260%; aspect-ratio: 1;
+  background: conic-gradient(
+    from 0deg,
+    #818cf8 0%, #c084fc 20%, #f472b6 38%,
+    #38bdf8 58%, #2dd4bf 75%, #818cf8 100%
+  );
+  animation: logo-ring-spin 3s linear infinite;
+  will-change: transform;
+}
+
+.logo-ring:hover::before { animation-duration: 0.85s; }
+
+.logo-ring-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 8.5px;
+  background: linear-gradient(145deg, #1e3a8a 0%, #1d4ed8 60%, #2563eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-chart-line {
+  stroke-dasharray: 30;
+  animation: chart-line-draw 3.2s ease-in-out infinite;
+}
+
+.logo-chart-ping {
+  transform-origin: 19px 2px;
+  animation: chart-dot-ping 1.6s ease-out infinite;
+}
+
+/* ─── Game logo rings (per-game, animated SVG) ───────────── */
+.game-logo-ring {
+  position: relative;
+  width: 64px; height: 64px;
+  border-radius: 18px;
+  overflow: hidden;
+  padding: 2px;
+  flex-shrink: 0;
+}
+.game-logo-ring::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 260%; aspect-ratio: 1;
+  animation: logo-ring-spin 3s linear infinite;
+  will-change: transform;
+}
+.game-logo-ring-inner {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  border-radius: 15px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Bull or Bear — green */
+.game-logo-ring--bull {
+  box-shadow: 0 0 22px rgba(34,197,94,0.5), 0 0 48px rgba(16,185,129,0.18);
+}
+.game-logo-ring--bull::before {
+  background: conic-gradient(from 0deg, #22c55e 0%, #4ade80 30%, #bbf7d0 55%, #4ade80 75%, #16a34a 100%);
+}
+.game-logo-ring--bull .game-logo-ring-inner {
+  background: linear-gradient(145deg, #14532d 0%, #166534 60%, #15803d 100%);
+}
+
+/* Snake — teal */
+.game-logo-ring--snake {
+  box-shadow: 0 0 22px rgba(20,184,166,0.5), 0 0 48px rgba(6,182,212,0.18);
+}
+.game-logo-ring--snake::before {
+  background: conic-gradient(from 0deg, #14b8a6 0%, #2dd4bf 30%, #99f6e4 55%, #2dd4bf 75%, #0d9488 100%);
+}
+.game-logo-ring--snake .game-logo-ring-inner {
+  background: linear-gradient(145deg, #134e4a 0%, #115e59 60%, #0f766e 100%);
+}
+
+/* Sudoku — indigo */
+.game-logo-ring--sudoku {
+  box-shadow: 0 0 22px rgba(99,102,241,0.5), 0 0 48px rgba(168,85,247,0.18);
+}
+.game-logo-ring--sudoku::before {
+  background: conic-gradient(from 0deg, #6366f1 0%, #818cf8 30%, #c7d2fe 55%, #818cf8 75%, #4f46e5 100%);
+}
+.game-logo-ring--sudoku .game-logo-ring-inner {
+  background: linear-gradient(145deg, #1e1b4b 0%, #312e81 60%, #3730a3 100%);
+}
+
+/* Bull or Bear — animated chart line */
+@keyframes game-chart-draw {
+  0%   { stroke-dashoffset: 52; opacity: 0; }
+  10%  { opacity: 1; }
+  70%  { stroke-dashoffset: 0;  opacity: 1; }
+  85%  { stroke-dashoffset: 0;  opacity: 0; }
+  100% { stroke-dashoffset: 0;  opacity: 0; }
+}
+@keyframes game-chart-ping {
+  0%   { opacity: 0.9; transform: scale(1);   }
+  100% { opacity: 0;   transform: scale(2.8); }
+}
+.game-chart-line {
+  stroke-dasharray: 52;
+  animation: game-chart-draw 3.2s ease-in-out infinite;
+}
+.game-chart-ping {
+  transform-origin: 30px 2px;
+  animation: game-chart-ping 1.5s ease-out infinite;
+}
+
+/* Snake — crawling body + tongue flick */
+@keyframes snake-body-crawl {
+  0%   { stroke-dashoffset: 54; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes snake-tongue-flick {
+  0%, 60%  { opacity: 0; }
+  72%, 88% { opacity: 1; }
+  100%     { opacity: 0; }
+}
+.game-snake-body {
+  stroke-dasharray: 38 16;
+  animation: snake-body-crawl 1.8s linear infinite;
+}
+.game-snake-tongue {
+  animation: snake-tongue-flick 2.2s ease-in-out infinite;
+}
+
+/* Sudoku — numbers fade in one by one */
+@keyframes sudoku-cell-pop {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  80%  { opacity: 1; }
+  92%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+.game-sudoku-num { animation: sudoku-cell-pop 3.5s ease-in-out infinite; opacity: 0; }
+.game-sudoku-n2  { animation-delay: 0.45s; }
+.game-sudoku-n3  { animation-delay: 0.9s;  }
+.game-sudoku-n4  { animation-delay: 1.35s; }
+.game-sudoku-n5  { animation-delay: 1.8s;  }
+
+/* ── Game picker card – Option B redesign ─────────────────── */
+.game-picker-card {
+  transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+.game-picker-card:hover { transform: scale(1.02); }
+
+.game-card-preview {
+  width: 88px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.game-card-preview::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 12%; bottom: 12%;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.1) 50%, transparent);
+}
+
+.preview-content {
+  transition: opacity 0.22s ease, filter 0.22s ease;
+}
+.game-picker-card:hover .preview-content {
+  opacity: 0.14;
+  filter: blur(2.5px);
+}
+
+.game-card-play-btn {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+.game-picker-card:hover .game-card-play-btn {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Candlestick bob animations */
+@keyframes candle-rise { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes candle-drop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+.preview-candle-1 { animation: candle-rise 2.0s ease-in-out infinite; }
+.preview-candle-2 { animation: candle-drop 2.3s ease-in-out infinite; animation-delay: 0.3s; }
+.preview-candle-3 { animation: candle-rise 1.9s ease-in-out infinite; animation-delay: 0.65s; }
+.preview-candle-4 { animation: candle-drop 2.5s ease-in-out infinite; animation-delay: 1.0s; }
+
+/* Snake preview body */
+@keyframes preview-snake-crawl { 0% { stroke-dashoffset: 72; } 100% { stroke-dashoffset: 0; } }
+.preview-snake-body {
+  stroke-dasharray: 50 22;
+  animation: preview-snake-crawl 1.8s linear infinite;
+}
+
+/* Food ping */
+@keyframes preview-food-ping {
+  0%   { opacity: 0.65; transform: scale(1); }
+  100% { opacity: 0;    transform: scale(2.5); }
+}
+.preview-food-ring { animation: preview-food-ping 1.2s ease-out infinite; }
+
 @keyframes sync-glow {
   0%   { background-position: 0 0; }
   50%  { background-position: 400% 0; }
