@@ -7,7 +7,6 @@ import {
   Bell,
   ScrollText,
   RefreshCw,
-  TrendingUp,
   Moon,
   Sun,
   Gamepad2
@@ -106,8 +105,18 @@ export default function Navbar() {
 
           {/* Logo */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-md">
-              <TrendingUp size={16} className="text-white" strokeWidth={2.5} />
+            <div className="logo-ring">
+              <div className="logo-ring-inner">
+                <svg width="16" height="11" viewBox="0 0 20 14" fill="none">
+                  <polyline
+                    className="logo-chart-line"
+                    points="1,12 4,8 7,10 10,5 13,7 17,3 19,1"
+                    stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+                  />
+                  <circle cx="19" cy="1" r="1.5" fill="#bfdbfe" />
+                  <circle cx="19" cy="1" r="1.5" fill="#bfdbfe" className="logo-chart-ping" />
+                </svg>
+              </div>
             </div>
             <div className="leading-tight">
               <p style={{ color: 'var(--nav-logo-t)' }} className="font-semibold text-sm tracking-wide">KIS Price Tool</p>
