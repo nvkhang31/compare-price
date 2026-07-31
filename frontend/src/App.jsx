@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
 import Comparisons from './pages/Comparisons'
+import SymbolDetail from './pages/SymbolDetail'
 import Alerts from './pages/Alerts'
 import AuditLog from './pages/AuditLog'
 
@@ -15,6 +16,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard"   element={<Dashboard />} />
             <Route path="/comparisons" element={<Comparisons />} />
+            <Route path="/symbols/:symbol" element={<SymbolDetail />} />
             <Route path="/alerts"      element={<Alerts />} />
             <Route path="/audit-log"   element={<AuditLog />} />
           </Routes>

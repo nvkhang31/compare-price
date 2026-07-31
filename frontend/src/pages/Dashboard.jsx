@@ -14,7 +14,9 @@ import {
   Activity,
   BarChart3,
   TrendingDown,
-  Info
+  Info,
+  RefreshCw,
+  ShieldCheck
 } from 'lucide-react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
@@ -214,28 +216,123 @@ function TopSymbols({ data, loading }) {
   )
 }
 
+function SourceReliability({ data, loading }) {
+  const { t } = useTranslation()
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ background: 'var(--tint-blue)', border: '1px solid color-mix(in srgb, var(--blue) 30%, transparent)' }}>
+          <ShieldCheck size={14} style={{ color: 'var(--blue)' }} strokeWidth={2} />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold text-gray-800">{t('dashboard.reliabilityTitle')}</h2>
+          <div className="relative group cursor-help">
+            <Info size={13} strokeWidth={2} style={{ color: 'var(--t-faint)' }} />
+            <div className="absolute left-0 bottom-full mb-2 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+              style={{ background: 'rgba(15,20,30,0.92)', color: '#e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+              {t('dashboard.reliabilitySub')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[0,1,2,3].map(i => <div key={i} className="h-20 bg-gray-50 rounded-xl animate-pulse" />)}
+        </div>
+      ) : !data?.reliability?.length ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <div className="w-12 h-12 bg-green-50 ring-4 ring-green-100 rounded-full flex items-center justify-center mb-3">
+            <CheckCircle2 size={22} className="text-green-500" strokeWidth={1.5} />
+          </div>
+          <p className="text-sm font-medium text-gray-600">{t('dashboard.reliabilityEmpty')}</p>
+          <p className="text-xs text-gray-400 mt-1">{t('dashboard.reliabilityEmptySub')}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {data.reliability.map(({ source, reliabilityPct, cleanDays, totalDays }) => {
+            const label     = SOURCE_DISPLAY[source] ?? source.toUpperCase()
+            const barColor  = reliabilityPct >= 85 ? 'var(--green)' : reliabilityPct >= 70 ? '#f59e0b' : 'var(--red)'
+            const tintColor = reliabilityPct >= 85 ? 'var(--tint-green)' : reliabilityPct >= 70 ? 'var(--tint-amber)' : 'var(--tint-red)'
+            return (
+              <div key={source} className="rounded-xl p-4" style={{ background: 'var(--bg)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold" style={{ color: 'var(--t-mid)' }}>{label}</span>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: barColor }}>{reliabilityPct}%</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: 'var(--bd)' }}>
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${reliabilityPct}%`, background: barColor }} />
+                </div>
+                <p className="text-xs" style={{ color: 'var(--t-faint)' }}>
+                  {t('dashboard.reliabilityDays', { clean: cleanDays, total: totalDays })}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {data?.reliability?.length > 0 && (
+        <p className="text-xs mt-4 pt-3" style={{ color: 'var(--t-faint)', borderTop: '1px solid var(--bd)' }}>
+          {t('dashboard.reliabilityPeriod', { days: data.days })}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const { t, i18n } = useTranslation()
   const [stats,         setStats]         = useState(null)
   const [alerts,        setAlerts]        = useState([])
   const [trendData,     setTrendData]     = useState([])
   const [discDelta,     setDiscDelta]     = useState(null)
-  const [analyticsData, setAnalyticsData] = useState(null)
+  const [analyticsData,    setAnalyticsData]    = useState(null)
+  const [reliabilityData,  setReliabilityData]  = useState(null)
   const [loading,       setLoading]       = useState(true)
+  const [refreshing,    setRefreshing]    = useState(false)
+  const [liveMode,      setLiveMode]      = useState(() => localStorage.getItem('dash-live') === 'true')
+  const [countdown,     setCountdown]     = useState(600)
+  const [loadTick,      setLoadTick]      = useState(0)
+
+  const toggleLive = () => {
+    setLiveMode(prev => {
+      const next = !prev
+      localStorage.setItem('dash-live', String(next))
+      if (next) setCountdown(600)
+      return next
+    })
+  }
 
   useEffect(() => {
+    if (!liveMode) return
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { setLoadTick(c => c + 1); return 600 }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [liveMode])
+
+  useEffect(() => {
+    const isRefresh = loadTick > 0
     const load = async () => {
+      if (isRefresh) setRefreshing(true)
+      else setLoading(true)
       try {
         const today = dayjs().format('YYYY-MM-DD')
 
-        const [statsRes, alertRes, analyticsRes] = await Promise.all([
+        const [statsRes, alertRes, analyticsRes, reliabilityRes] = await Promise.all([
           api.stats(),
           api.alerts.list({ status: 'open', limit: 5 }),
-          api.comparisons.analytics({ date: today })
+          api.comparisons.analytics({ date: today }),
+          api.comparisons.reliability({ days: 7 })
         ])
         setStats(statsRes.data)
         setAlerts(alertRes.data)
         setAnalyticsData(analyticsRes.data)
+        setReliabilityData(reliabilityRes.data)
 
         const trend = []
         for (let i = 6; i >= 0; i--) {
@@ -257,12 +354,14 @@ export default function Dashboard() {
       } catch (e) {
         console.error(e)
       } finally {
-        setLoading(false)
+        if (isRefresh) setRefreshing(false)
+        else setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [loadTick])
 
+  const countdownFmt = `${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}`
   const dateLocale = i18n.language === 'vi' ? 'vi' : 'en'
   const s = stats ?? {}
 
@@ -278,6 +377,28 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={toggleLive}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+            style={liveMode ? {
+              background: 'var(--tint-green)',
+              color: 'var(--green-strong)',
+              border: '1px solid color-mix(in srgb, var(--green) 35%, transparent)'
+            } : {
+              background: 'var(--nav-ctrl-bg)',
+              color: 'var(--t-mid)',
+              border: '1px solid var(--nav-ctrl-bd)'
+            }}
+          >
+            {liveMode ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--green)' }} />
+                LIVE
+                <span className="font-mono tabular-nums">{countdownFmt}</span>
+                {refreshing && <RefreshCw size={10} className="animate-spin" />}
+              </>
+            ) : t('dashboard.liveOff')}
+          </button>
           {s.sourcesAvailable?.length > 0 && (
             <div className="flex gap-1.5 flex-wrap justify-end">
               {s.sourcesAvailable.map(src => (
@@ -473,6 +594,9 @@ export default function Dashboard() {
           <TopSymbols data={analyticsData} loading={loading} />
         </div>
       </div>
+
+      {/* Source reliability row */}
+      <SourceReliability data={reliabilityData} loading={loading} />
 
     </div>
   )

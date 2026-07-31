@@ -42,7 +42,14 @@
     "colSymbol": "Symbol",
     "colExchange": "Exchange",
     "colSources": "Discrepant sources",
-    "colMaxDiff": "Max diff%"
+    "colMaxDiff": "Max diff%",
+    "liveOff": "Auto-refresh",
+    "reliabilityTitle": "Source reliability",
+    "reliabilitySub": "% of days with no discrepancy per source — last 7 days",
+    "reliabilityEmpty": "No data yet",
+    "reliabilityEmptySub": "Sync data to see source reliability scores",
+    "reliabilityDays": "{{clean}}/{{total}} clean days",
+    "reliabilityPeriod": "Based on last {{days}} days"
   },
   "comparisons": {
     "title": "Price Comparison",
@@ -153,6 +160,27 @@
     "detailDiscrepancy": "Discrepancies",
     "detailSyncAt": "at",
     "detailSources": "Sources"
+  },
+  "symbol": {
+    "back": "Back to Comparisons",
+    "allClean": "All matching",
+    "discrepancyCount": "discrepancies in 30 days",
+    "statDiscrepancies": "Discrepant days",
+    "statOf": "out of {{days}} days",
+    "statSources": "Sources affected",
+    "statLast": "Last discrepancy",
+    "statDaysAgo": "{{n}} days ago",
+    "noDiscrepancy": "No discrepancies",
+    "noDiscrepancySub": "All prices matched in the last 30 days",
+    "chartTitle": "30-day discrepancy history",
+    "tableTitle": "Discrepant days detail",
+    "tooltipDisc": "⚠ Discrepancy",
+    "tooltipMatch": "✓ Match",
+    "colDate": "Date",
+    "colSources": "Sources",
+    "colCeiling": "Ceiling diff",
+    "colFloor": "Floor diff",
+    "colRef": "Ref diff"
   },
   "common": {
     "loading": "Loading...",

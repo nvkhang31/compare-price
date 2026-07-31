@@ -68,6 +68,57 @@ router.get('/summary', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/comparisons/reliability?days=7
+router.get('/reliability', async (req, res, next) => {
+  try {
+    const days = parseInt(req.query.days) || 7
+    const dates = []
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      dates.push(d.toISOString().split('T')[0])
+    }
+
+    // For each date, find which sources had any discrepancy that day
+    const rows = await Comparison.aggregate([
+      { $match: { date: { $in: dates }, hasDiscrepancy: true } },
+      { $unwind: '$discrepantSources' },
+      { $group: { _id: { date: '$date', source: '$discrepantSources' } } },
+      { $group: { _id: '$_id.source', discrepantDays: { $sum: 1 } } },
+      { $project: { _id: 0, source: '$_id', discrepantDays: 1 } }
+    ])
+
+    // Find which sources had data on any of those dates
+    const sourcesWithData = await Comparison.aggregate([
+      { $match: { date: { $in: dates } } },
+      { $unwind: '$discrepantSources' },
+      { $group: { _id: '$discrepantSources' } },
+      { $project: { _id: 0, source: '$_id' } }
+    ])
+
+    // Also get all sources that appeared as discrepant (they had data)
+    const allSources = [...new Set([
+      ...rows.map(r => r.source),
+      ...sourcesWithData.map(s => s.source)
+    ])]
+
+    const discMap = Object.fromEntries(rows.map(r => [r.source, r.discrepantDays]))
+
+    const result = allSources.map(source => {
+      const discrepantDays = discMap[source] ?? 0
+      const cleanDays = days - discrepantDays
+      return {
+        source,
+        cleanDays,
+        totalDays: days,
+        reliabilityPct: parseFloat((cleanDays / days * 100).toFixed(1))
+      }
+    }).sort((a, b) => b.reliabilityPct - a.reliabilityPct)
+
+    res.json({ success: true, data: { reliability: result, days } })
+  } catch (err) { next(err) }
+})
+
 // GET /api/comparisons/analytics?date=2026-07-09
 router.get('/analytics', async (req, res, next) => {
   try {

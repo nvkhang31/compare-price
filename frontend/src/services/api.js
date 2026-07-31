@@ -22,7 +22,8 @@ const api = {
   comparisons: {
     list:      (params) => instance.get('/comparisons', { params }),
     summary:   (params) => instance.get('/comparisons/summary', { params }),
-    analytics: (params) => instance.get('/comparisons/analytics', { params }),
+    analytics:   (params) => instance.get('/comparisons/analytics', { params }),
+    reliability: (params) => instance.get('/comparisons/reliability', { params }),
     bySymbol:  (symbol) => instance.get(`/comparisons/${symbol}`)
   },
 
