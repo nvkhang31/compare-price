@@ -37,7 +37,11 @@ const api = {
     list: (params) => instance.get('/audit-logs', { params })
   },
 
-  stats: () => instance.get('/stats')
+  stats: () => instance.get('/stats'),
+
+  game: {
+    question: () => instance.get('/game/question')
+  }
 }
 
 export default api

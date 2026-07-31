@@ -5,6 +5,7 @@ import Comparisons from './pages/Comparisons'
 import SymbolDetail from './pages/SymbolDetail'
 import Alerts from './pages/Alerts'
 import AuditLog from './pages/AuditLog'
+import Game from './pages/Game'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
             <Route path="/symbols/:symbol" element={<SymbolDetail />} />
             <Route path="/alerts"      element={<Alerts />} />
             <Route path="/audit-log"   element={<AuditLog />} />
+            <Route path="/game"        element={<Game />} />
           </Routes>
         </main>
       </div>

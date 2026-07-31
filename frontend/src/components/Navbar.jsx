@@ -9,7 +9,8 @@ import {
   RefreshCw,
   TrendingUp,
   Moon,
-  Sun
+  Sun,
+  Gamepad2
 } from 'lucide-react'
 import api from '../services/api'
 
@@ -78,7 +79,8 @@ export default function Navbar() {
     { to: '/dashboard',   label: t('nav.dashboard'),   icon: LayoutDashboard },
     { to: '/comparisons', label: t('nav.comparisons'), icon: BarChart3       },
     { to: '/alerts',      label: t('nav.alerts'),      icon: Bell            },
-    { to: '/audit-log',   label: t('nav.auditLog'),    icon: ScrollText      }
+    { to: '/audit-log',   label: t('nav.auditLog'),    icon: ScrollText      },
+    { to: '/game',        label: t('nav.game'),         icon: Gamepad2        }
   ]
 
   const handleSync = async () => {
