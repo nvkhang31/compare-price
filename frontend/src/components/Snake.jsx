@@ -8,8 +8,7 @@ const W      = CELL * COLS   // 400px
 const H      = CELL * ROWS   // 400px
 const LS_KEY = 'snake_highscore'
 
-const SPEEDS = [180, 150, 120, 100, 80]
-function getSpeed(score) { return SPEEDS[Math.min(Math.floor(score / 5), SPEEDS.length - 1)] }
+function getSpeed(score) { return Math.max(90, 320 - score * 12) }
 
 const DIR_MAP = {
   ArrowUp:    { x: 0,  y: -1 }, w: { x: 0,  y: -1 }, W: { x: 0,  y: -1 },
@@ -68,9 +67,9 @@ export default function Snake({ onBack }) {
     if (!g) return
 
     // Food — glowing circle
-    ctx.shadowBlur   = 10
-    ctx.shadowColor  = '#f87171'
-    ctx.fillStyle    = '#f87171'
+    ctx.shadowBlur  = 10
+    ctx.shadowColor = '#f87171'
+    ctx.fillStyle   = '#f87171'
     ctx.beginPath()
     ctx.arc(g.food.x * CELL + CELL / 2, g.food.y * CELL + CELL / 2, CELL / 2 - 2, 0, Math.PI * 2)
     ctx.fill()
@@ -86,6 +85,46 @@ export default function Snake({ onBack }) {
       ctx.fill()
     })
     ctx.shadowBlur = 0
+
+    // Snake eyes on head
+    if (g.snake.length > 0) {
+      const head = g.snake[0]
+      const cx   = head.x * CELL + CELL / 2
+      const cy   = head.y * CELL + CELL / 2
+      const d    = g.dir
+      // Front offset (direction of travel) and perpendicular offset
+      const fx = d.x * 4, fy = d.y * 4   // forward
+      const px = d.y * 3, py = -d.x * 3  // perpendicular
+      ctx.fillStyle = '#fff'
+      ;[[fx + px, fy + py], [fx - px, fy - py]].forEach(([ox, oy]) => {
+        ctx.beginPath()
+        ctx.arc(cx + ox, cy + oy, 2.2, 0, Math.PI * 2)
+        ctx.fill()
+        // Pupil
+        ctx.fillStyle = '#0f172a'
+        ctx.beginPath()
+        ctx.arc(cx + ox + d.x * 0.8, cy + oy + d.y * 0.8, 1.1, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#fff'
+      })
+    }
+
+    // Floating +1 popups
+    if (g.popups?.length) {
+      g.popups.forEach(p => {
+        ctx.globalAlpha = p.alpha
+        ctx.fillStyle   = '#4ade80'
+        ctx.font        = 'bold 13px monospace'
+        ctx.textAlign   = 'center'
+        ctx.fillText('+1', p.x, p.y)
+      })
+      ctx.globalAlpha = 1
+      ctx.textAlign   = 'left'
+      // Advance popup animations
+      g.popups = g.popups
+        .map(p => ({ ...p, y: p.y - 1.2, alpha: p.alpha - 0.045 }))
+        .filter(p => p.alpha > 0)
+    }
   }
 
   // ── Game logic ────────────────────────────────────────────
@@ -131,6 +170,11 @@ export default function Snake({ onBack }) {
 
     if (ate) {
       g.score += 1
+      g.popups = [...(g.popups ?? []), {
+        x:     newHead.x * CELL + CELL / 2,
+        y:     newHead.y * CELL + CELL / 2 - 4,
+        alpha: 1,
+      }]
       g.food = randomFood(newSnake)
       setScore(g.score)
       startLoop(getSpeed(g.score))  // re-schedule with new speed
@@ -178,6 +222,7 @@ export default function Snake({ onBack }) {
       score:   0,
       paused:  false,
       over:    false,
+      popups:  [],
     }
     setScore(0)
     setIsNewBest(false)
@@ -228,7 +273,15 @@ export default function Snake({ onBack }) {
       {/* Canvas */}
       <div
         className="relative rounded-xl overflow-hidden"
-        style={{ width: W, height: H, border: '1px solid var(--bd)' }}
+        style={{
+          width: W, height: H,
+          border: '1px solid var(--bd)',
+          boxShadow: phase === 'playing' ? '0 0 18px rgba(34,197,94,0.35), 0 0 40px rgba(34,197,94,0.12)'
+            : phase === 'over'    ? '0 0 18px rgba(239,68,68,0.40), 0 0 40px rgba(239,68,68,0.12)'
+            : phase === 'paused'  ? '0 0 14px rgba(59,130,246,0.30)'
+            : 'none',
+          transition: 'box-shadow 0.4s ease',
+        }}
       >
         <canvas ref={canvasRef} width={W} height={H} />
 
