@@ -7,7 +7,8 @@
     "syncNow": "Sync ngay",
     "syncing": "Đang sync...",
     "syncOk": "Sync đã kích hoạt",
-    "syncFail": "Sync thất bại"
+    "syncFail": "Sync thất bại",
+    "game": "Game"
   },
   "dashboard": {
     "title": "Dashboard",

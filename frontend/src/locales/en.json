@@ -7,7 +7,8 @@
     "syncNow": "Sync now",
     "syncing": "Syncing...",
     "syncOk": "Sync triggered",
-    "syncFail": "Sync failed"
+    "syncFail": "Sync failed",
+    "game": "Game"
   },
   "dashboard": {
     "title": "Dashboard",

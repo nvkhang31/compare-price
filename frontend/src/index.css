@@ -282,6 +282,73 @@ body.dark input::placeholder { color: var(--t-faint); }
 .audit-row { transition: background-color 0.1s; }
 .audit-row:hover { background-color: var(--tint-blue); }
 
+/* ─── Stat card gradient border (hover only) ──────────────── */
+@keyframes card-border-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.stat-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 1px;
+  background: var(--bd); /* default thin border when not hovering */
+  height: 100%;
+}
+
+.stat-card::before,
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* Square so it covers all 4 corners evenly at any rotation angle */
+  width: 250%;
+  aspect-ratio: 1 / 1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    #818cf8 8%,
+    #c084fc 18%,
+    #f472b6 28%,
+    transparent 35%,
+    #38bdf8 52%,
+    #2dd4bf 62%,
+    transparent 70%,
+    #818cf8 85%,
+    transparent 95%
+  );
+  animation: card-border-spin 4s linear infinite;
+  will-change: transform;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.stat-card::before { z-index: 0; }
+
+.stat-card::after {
+  filter: blur(22px);
+  mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 38%, black 100%);
+  -webkit-mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 38%, black 100%);
+  z-index: 0;
+}
+
+/* Fade in on hover */
+.stat-card:hover::before             { opacity: 0.85; }
+.stat-card:hover::after              { opacity: 0.40; }
+body.dark .stat-card:hover::before   { opacity: 1;    }
+body.dark .stat-card:hover::after    { opacity: 0.50; }
+
+.stat-card-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: 15px;
+  background: var(--card);
+  height: 100%;
+  box-sizing: border-box;
+}
+
 /* ─── Navbar ──────────────────────────────────────────────── */
 .nav-bar {
   background: var(--nav-bg);
