@@ -41,6 +41,11 @@ const api = {
 
   game: {
     question: () => instance.get('/game/question')
+  },
+
+  sudoku: {
+    submitScore:  (data)       => instance.post('/game/sudoku/score', data),
+    leaderboard:  (difficulty) => instance.get('/game/sudoku/leaderboard', { params: { difficulty } })
   }
 }
 

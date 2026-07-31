@@ -16,6 +16,7 @@ const auditLogsRouter   = require('./src/routes/auditLogs');
 const statsRouter       = require('./src/routes/stats');
 const configRouter      = require('./src/routes/config');
 const gameRouter        = require('./src/routes/game');
+const sudokuScoreRouter = require('./src/routes/sudokuScore');
 
 // Models — imported here so Mongoose registers schemas and creates indexes on startup
 require('./src/models/StockPrice');
@@ -51,6 +52,7 @@ app.use('/api/audit-logs',  auditLogsRouter);
 app.use('/api/stats',       statsRouter);
 app.use('/api/config',      configRouter);
 app.use('/api/game',        gameRouter);
+app.use('/api/game/sudoku', sudokuScoreRouter);
 
 // 404 handler
 app.use((req, res) => {
