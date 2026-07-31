@@ -42,7 +42,14 @@
     "colSymbol": "Mã",
     "colExchange": "Sàn",
     "colSources": "Source lệch",
-    "colMaxDiff": "Max lệch%"
+    "colMaxDiff": "Max lệch%",
+    "liveOff": "Tự làm mới",
+    "reliabilityTitle": "Độ tin cậy nguồn",
+    "reliabilitySub": "% số ngày không lệch giá theo từng source — 7 ngày gần nhất",
+    "reliabilityEmpty": "Chưa có dữ liệu",
+    "reliabilityEmptySub": "Sync dữ liệu để xem điểm tin cậy",
+    "reliabilityDays": "{{clean}}/{{total}} ngày sạch",
+    "reliabilityPeriod": "Dựa trên {{days}} ngày gần nhất"
   },
   "comparisons": {
     "title": "So sánh giá",
@@ -153,6 +160,27 @@
     "detailDiscrepancy": "Sai lệch",
     "detailSyncAt": "lúc",
     "detailSources": "Nguồn"
+  },
+  "symbol": {
+    "back": "Quay lại So sánh giá",
+    "allClean": "Khớp hoàn toàn",
+    "discrepancyCount": "lần lệch trong 30 ngày",
+    "statDiscrepancies": "Ngày lệch giá",
+    "statOf": "/ {{days}} ngày",
+    "statSources": "Nguồn bị lệch",
+    "statLast": "Lệch gần nhất",
+    "statDaysAgo": "{{n}} ngày trước",
+    "noDiscrepancy": "Không có lệch giá",
+    "noDiscrepancySub": "Tất cả giá khớp trong 30 ngày qua",
+    "chartTitle": "Lịch sử lệch giá 30 ngày",
+    "tableTitle": "Chi tiết các ngày lệch giá",
+    "tooltipDisc": "⚠ Lệch giá",
+    "tooltipMatch": "✓ Khớp",
+    "colDate": "Ngày",
+    "colSources": "Nguồn",
+    "colCeiling": "Lệch Trần",
+    "colFloor": "Lệch Sàn",
+    "colRef": "Lệch TC"
   },
   "common": {
     "loading": "Đang tải...",

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import {
@@ -142,6 +143,7 @@ function exportCSV(data, sources, t) {
 
 export default function Comparisons() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [data,             setData]             = useState([])
   const [total,            setTotal]            = useState(0)
   const [page,             setPage]             = useState(1)
@@ -336,10 +338,15 @@ export default function Comparisons() {
                   return (
                     <tr key={row._id} className={cn('comp-row', isDiscrepant && 'comp-row-disc')}>
                       <td
-                        className="px-4 py-2.5 font-semibold text-gray-800 sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]"
-                        style={{ background: isDiscrepant ? 'color-mix(in srgb, var(--card) 90%, var(--red))' : 'var(--card)' }}
+                        className="px-4 py-2.5 font-semibold sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] cursor-pointer"
+                        style={{
+                          background: isDiscrepant ? 'color-mix(in srgb, var(--card) 90%, var(--red))' : 'var(--card)',
+                          color: 'var(--blue)'
+                        }}
+                        onClick={() => navigate(`/symbols/${row.symbol}`)}
+                        title={row.symbol}
                       >
-                        {row.symbol}
+                        <span className="hover:underline underline-offset-2">{row.symbol}</span>
                       </td>
                       <td className="px-3 py-2.5"><ExchangeBadge exchange={row.exchange} /></td>
                       <td className="px-3 py-2.5 text-right"><KisPriceCell value={row.kisPrice?.ceilingPrice} /></td>

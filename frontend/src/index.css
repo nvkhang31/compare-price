@@ -413,6 +413,14 @@ body.dark input::placeholder { color: var(--t-faint); }
   cursor: not-allowed;
 }
 
+@keyframes slide-in-right {
+  from { transform: translateX(32px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 @keyframes sync-glow {
   0%   { background-position: 0 0; }
   50%  { background-position: 400% 0; }
