@@ -1,9 +1,11 @@
 require('dotenv').config();
 
+const http    = require('http');
 const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-const helmet = require('helmet');
+const cors    = require('cors');
+const morgan  = require('morgan');
+const helmet  = require('helmet');
+const { Server: SocketServer } = require('socket.io');
 
 const connectDB = require('./src/config/db');
 const errorHandler = require('./src/middleware/errorHandler');
@@ -25,11 +27,22 @@ require('./src/models/Alert');
 require('./src/models/AuditLog');
 require('./src/models/Config');
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+const app    = express();
+const server = http.createServer(app);
+const PORT   = process.env.PORT || 5000;
 
 // Connect to MongoDB
 connectDB();
+
+// Socket.io — Caro realtime
+const io = new SocketServer(server, {
+  cors: {
+    origin: (process.env.CORS_ORIGIN || 'http://localhost:3000')
+      .split(',').map(o => o.trim()).filter(Boolean),
+    methods: ['GET', 'POST']
+  }
+});
+require('./src/socket/caroSocket')(io);
 
 // Parse CORS_ORIGIN thành array nếu có nhiều origins (VD: "http://localhost:3000,https://xxx.vercel.app")
 const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
@@ -62,7 +75,7 @@ app.use((req, res) => {
 // Global error handler
 app.use(errorHandler);
 
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT} [${process.env.NODE_ENV}]`);
   startScheduler();
 

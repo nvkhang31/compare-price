@@ -3,6 +3,7 @@ import { Gamepad2, Lightbulb } from 'lucide-react'
 import BullBear from '../components/BullBear'
 import Snake from '../components/Snake'
 import Sudoku from '../components/Sudoku'
+import Caro from '../components/Caro'
 
 // ── Custom game icons ─────────────────────────────────────────
 
@@ -35,6 +36,26 @@ function SnakeIcon({ size = 22, style }) {
       {/* Forked tongue */}
       <line x1="21.5" y1="11" x2="24" y2="9.2"  stroke="#f87171" strokeWidth="1.4" strokeLinecap="round" />
       <line x1="21.5" y1="11" x2="24" y2="13"   stroke="#f87171" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function CaroIcon({ size = 22, style }) {
+  const ac = style?.color ?? '#a855f7'
+  return (
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none">
+      <line x1="7.5"  y1="2"  x2="7.5"  y2="20" stroke={ac} strokeWidth="1"   opacity="0.38"/>
+      <line x1="14.5" y1="2"  x2="14.5" y2="20" stroke={ac} strokeWidth="1"   opacity="0.38"/>
+      <line x1="2"    y1="7.5" x2="20"  y2="7.5" stroke={ac} strokeWidth="1"  opacity="0.38"/>
+      <line x1="2"    y1="14.5" x2="20" y2="14.5" stroke={ac} strokeWidth="1" opacity="0.38"/>
+      {/* X — top-left cell */}
+      <line x1="3.2" y1="3.2" x2="6.3" y2="6.3" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="6.3" y1="3.2" x2="3.2" y2="6.3" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
+      {/* O — center cell */}
+      <circle cx="11" cy="11" r="2.4" stroke="#f87171" strokeWidth="2" fill="none"/>
+      {/* X — bottom-right cell */}
+      <line x1="15.7" y1="15.7" x2="18.8" y2="18.8" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="18.8" y1="15.7" x2="15.7" y2="18.8" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )
 }
@@ -108,6 +129,46 @@ function SudokuPreview() {
   )
 }
 
+function CaroPreview() {
+  const stones = [
+    { x: 3,  y: 3,  blue: true  },
+    { x: 15, y: 3,  blue: false },
+    { x: 9,  y: 9,  blue: true  },
+    { x: 21, y: 9,  blue: false },
+    { x: 15, y: 15, blue: true  },
+    { x: 3,  y: 21, blue: false },
+    { x: 21, y: 21, blue: true  },
+  ]
+  return (
+    <svg width="64" height="64" viewBox="0 0 30 30" fill="none">
+      <defs>
+        <radialGradient id="cpx" cx="35%" cy="30%">
+          <stop offset="0%" stopColor="#93c5fd"/>
+          <stop offset="100%" stopColor="#1d4ed8"/>
+        </radialGradient>
+        <radialGradient id="cpo" cx="35%" cy="30%">
+          <stop offset="0%" stopColor="#fca5a5"/>
+          <stop offset="100%" stopColor="#b91c1c"/>
+        </radialGradient>
+      </defs>
+      {[6, 12, 18, 24].map(v => (
+        <g key={v}>
+          <line x1={v} y1="0" x2={v} y2="30" stroke="rgba(148,163,184,0.22)" strokeWidth="0.6"/>
+          <line x1="0" y1={v} x2="30" y2={v} stroke="rgba(148,163,184,0.22)" strokeWidth="0.6"/>
+        </g>
+      ))}
+      {stones.map((s, i) => (
+        <circle
+          key={i}
+          cx={s.x} cy={s.y} r="2.2"
+          fill={s.blue ? 'url(#cpx)' : 'url(#cpo)'}
+          className={`caro-preview-stone caro-preview-s${i + 1}`}
+        />
+      ))}
+    </svg>
+  )
+}
+
 // ── Game config ──────────────────────────────────────────────
 
 const GAMES = [
@@ -159,6 +220,22 @@ const GAMES = [
     tagColor:  '#4f46e5',
     playColor: '#818cf8',
   },
+  {
+    id:        'caro',
+    icon:      CaroIcon,
+    name:      'Caro',
+    desc:      '2 người chơi — nối 5 ô liên tiếp trên bàn 20×20',
+    tag:       'PvP',
+    lsKey:     null,
+    preview:   CaroPreview,
+    gradient:  'linear-gradient(135deg, rgba(168,85,247,0.14) 0%, rgba(244,63,94,0.04) 100%)',
+    border:    'rgba(168,85,247,0.32)',
+    accent:    '#a855f7',
+    iconBg:    'rgba(168,85,247,0.16)',
+    tagBg:     'rgba(168,85,247,0.14)',
+    tagColor:  '#9333ea',
+    playColor: '#c084fc',
+  },
 ]
 
 // ── Page ─────────────────────────────────────────────────────
@@ -169,6 +246,7 @@ export default function Game() {
   if (selected === 'bullbear') return <BullBear onBack={() => setSelected(null)} />
   if (selected === 'snake')    return <Snake    onBack={() => setSelected(null)} />
   if (selected === 'sudoku')   return <Sudoku   onBack={() => setSelected(null)} />
+  if (selected === 'caro')     return <Caro     onBack={() => setSelected(null)} />
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8">
