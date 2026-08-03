@@ -141,6 +141,10 @@ export default function Caro({ onBack }) {
       localStorage.removeItem('caro_session')
     })
 
+    socket.on('connect_error', () => {
+      setError('Không thể kết nối server. Vui lòng thử lại sau.')
+    })
+
     socket.connect()
 
     // Try rejoin saved session on connect
