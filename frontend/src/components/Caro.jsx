@@ -569,7 +569,7 @@ export default function Caro({ onBack }) {
       {/* Board — scrollable when zoomed */}
       <div style={{ width: '100%', overflowX: 'auto' }}>
         <div className="caro-board-wrap"
-          style={{ width: Math.min(580, window.innerWidth - 16) * zoom }}>
+          style={{ width: Math.min(580, window.innerWidth - 16) * zoom, margin: '0 auto' }}>
           <div className="caro-board" data-turn={myTurn ? turn : ''}>
             {board.map((row, r) =>
               row.map((stone, c) => {
