@@ -528,7 +528,7 @@ export default function Sudoku({ onBack }) {
           )}
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap justify-center">
           <button onClick={() => startGame(difficulty)}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm"
             style={{ background: 'var(--blue)' }}>

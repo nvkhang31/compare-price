@@ -30,13 +30,19 @@ export default function Caro({ onBack }) {
   const [opponentRematch,setOpponentRematch]= useState(false)
   const [myRematch,      setMyRematch]      = useState(false)
   const [gameOverReason, setGameOverReason] = useState(null)
+  const [zoom,           setZoom]           = useState(1)
+  const [pendingCell,    setPendingCell]    = useState(null)
 
-  const socketRef       = useRef(null)
-  const countdownTimer  = useRef(null)
-  const nicknameRef     = useRef('')
+  const socketRef          = useRef(null)
+  const countdownTimer     = useRef(null)
+  const nicknameRef        = useRef('')
+  const lastPointerTypeRef = useRef('mouse')
 
   // Keep ref in sync so socket handlers always read latest value
   useEffect(() => { nicknameRef.current = nickname }, [nickname])
+
+  // Clear pending preview when turn changes or game ends
+  useEffect(() => { setPendingCell(null) }, [turn, phase])
 
   // ── Socket lifecycle ────────────────────────────────────────
   useEffect(() => {
@@ -194,10 +200,21 @@ export default function Caro({ onBack }) {
     socketRef.current?.emit('join-room', { code, nickname: nick })
   }
 
-  function placeStone(r, c) {
+  function handleCellClick(r, c) {
     if (phase !== 'playing' || turn !== myRole) return
-    if (board[r][c] !== null) return
-    socketRef.current?.emit('place-stone', { r, c })
+    if (board[r][c] !== null) { setPendingCell(null); return }
+
+    if (lastPointerTypeRef.current === 'touch') {
+      // Two-tap on mobile: first tap previews, second tap places
+      if (pendingCell?.r === r && pendingCell?.c === c) {
+        setPendingCell(null)
+        socketRef.current?.emit('place-stone', { r, c })
+      } else {
+        setPendingCell({ r, c })
+      }
+    } else {
+      socketRef.current?.emit('place-stone', { r, c })
+    }
   }
 
   function surrender() {
@@ -549,50 +566,79 @@ export default function Caro({ onBack }) {
         </div>
       )}
 
-      {/* Board */}
-      <div className="caro-board-wrap">
-        <div className="caro-board" data-turn={myTurn ? turn : ''}>
-          {board.map((row, r) =>
-            row.map((stone, c) => {
-              const key    = `${r}-${c}`
-              const isWin  = winSet.has(`${r},${c}`)
-              const isLast = lastMove?.r === r && lastMove?.c === c
-              return (
-                <div
-                  key={key}
-                  className={`caro-cell${stone ? ' caro-cell--occupied' : ''}`}
-                  onClick={() => placeStone(r, c)}
-                >
-                  {stone && (
-                    <div className={[
-                      'caro-stone',
-                      `caro-stone--${stone}`,
-                      isWin  ? 'caro-stone--win'  : '',
-                      isLast ? 'caro-stone--last' : '',
-                    ].join(' ')} />
-                  )}
-                </div>
-              )
-            })
-          )}
-        </div>
+      {/* Board — scrollable when zoomed */}
+      <div style={{ width: '100%', overflowX: 'auto' }}>
+        <div className="caro-board-wrap"
+          style={{ width: Math.min(580, window.innerWidth - 16) * zoom }}>
+          <div className="caro-board" data-turn={myTurn ? turn : ''}>
+            {board.map((row, r) =>
+              row.map((stone, c) => {
+                const key       = `${r}-${c}`
+                const isWin     = winSet.has(`${r},${c}`)
+                const isLast    = lastMove?.r === r && lastMove?.c === c
+                const isPending = myTurn && !stone && pendingCell?.r === r && pendingCell?.c === c
+                return (
+                  <div
+                    key={key}
+                    className={`caro-cell${stone ? ' caro-cell--occupied' : ''}`}
+                    onPointerDown={(e) => { lastPointerTypeRef.current = e.pointerType }}
+                    onClick={() => handleCellClick(r, c)}
+                  >
+                    {isPending && (
+                      <div className={`caro-stone caro-stone--${turn} caro-stone--preview`} />
+                    )}
+                    {stone && (
+                      <div className={[
+                        'caro-stone',
+                        `caro-stone--${stone}`,
+                        isWin  ? 'caro-stone--win'  : '',
+                        isLast ? 'caro-stone--last' : '',
+                      ].join(' ')} />
+                    )}
+                  </div>
+                )
+              })
+            )}
+          </div>
 
-        {winCells.length > 0 && (() => {
-          const sorted = [...winCells].sort((a, b) => a.r !== b.r ? a.r - b.r : a.c - b.c)
-          const first  = sorted[0], last = sorted[sorted.length - 1]
-          return (
-            <svg className="caro-win-line" viewBox={`0 0 ${COLS} ${ROWS}`}>
-              <line
-                x1={first.c + 0.5} y1={first.r + 0.5}
-                x2={last.c  + 0.5} y2={last.r  + 0.5}
-                stroke="#fbbf24" strokeWidth="0.38"
-                strokeLinecap="round"
-                pathLength="1"
-                className="caro-win-line-path"
-              />
-            </svg>
-          )
-        })()}
+          {winCells.length > 0 && (() => {
+            const sorted = [...winCells].sort((a, b) => a.r !== b.r ? a.r - b.r : a.c - b.c)
+            const first  = sorted[0], last = sorted[sorted.length - 1]
+            return (
+              <svg className="caro-win-line" viewBox={`0 0 ${COLS} ${ROWS}`}>
+                <line
+                  x1={first.c + 0.5} y1={first.r + 0.5}
+                  x2={last.c  + 0.5} y2={last.r  + 0.5}
+                  stroke="#fbbf24" strokeWidth="0.38"
+                  strokeLinecap="round"
+                  pathLength="1"
+                  className="caro-win-line-path"
+                />
+              </svg>
+            )
+          })()}
+        </div>
+      </div>
+
+      {/* Zoom controls */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setZoom(z => Math.max(0.5, Math.round((z - 0.25) * 4) / 4))}
+          disabled={zoom <= 0.5}
+          className="w-8 h-8 rounded-lg font-bold text-base flex items-center justify-center disabled:opacity-30 select-none"
+          style={{ background: 'var(--card)', border: '1px solid var(--bd)', color: 'var(--t-mid)' }}>
+          −
+        </button>
+        <span className="text-xs font-mono w-10 text-center" style={{ color: 'var(--t-faint)' }}>
+          {Math.round(zoom * 100)}%
+        </span>
+        <button
+          onClick={() => setZoom(z => Math.min(2.5, Math.round((z + 0.25) * 4) / 4))}
+          disabled={zoom >= 2.5}
+          className="w-8 h-8 rounded-lg font-bold text-base flex items-center justify-center disabled:opacity-30 select-none"
+          style={{ background: 'var(--card)', border: '1px solid var(--bd)', color: 'var(--t-mid)' }}>
+          +
+        </button>
       </div>
 
       {/* Controls */}

@@ -15,19 +15,41 @@ function createBoard() {
 }
 
 function checkWin(board, r, c, player) {
+  const opponent = player === 'X' ? 'O' : 'X'
+
   for (const [dr, dc] of DIRS) {
     const cells = [{ r, c }]
-    for (let i = 1; i < WIN_LEN; i++) {
+    let posEnd = 0, negEnd = 0
+
+    // Extend in positive direction until hitting a non-player cell
+    for (let i = 1; i <= ROWS + COLS; i++) {
       const nr = r + dr * i, nc = c + dc * i
       if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || board[nr][nc] !== player) break
       cells.push({ r: nr, c: nc })
+      posEnd = i
     }
-    for (let i = 1; i < WIN_LEN; i++) {
+
+    // Extend in negative direction
+    for (let i = 1; i <= ROWS + COLS; i++) {
       const nr = r - dr * i, nc = c - dc * i
       if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || board[nr][nc] !== player) break
       cells.push({ r: nr, c: nc })
+      negEnd = i
     }
-    if (cells.length >= WIN_LEN) return cells
+
+    if (cells.length < WIN_LEN) continue
+
+    // Tail_Neighbor: one step beyond positive end
+    const tailR = r + dr * (posEnd + 1), tailC = c + dc * (posEnd + 1)
+    // Head_Neighbor: one step beyond negative end
+    const headR = r - dr * (negEnd + 1), headC = c - dc * (negEnd + 1)
+
+    // Out-of-bounds = open (not a block). Only opponent stone counts as blocked.
+    const tailBlocked = tailR >= 0 && tailR < ROWS && tailC >= 0 && tailC < COLS && board[tailR][tailC] === opponent
+    const headBlocked = headR >= 0 && headR < ROWS && headC >= 0 && headC < COLS && board[headR][headC] === opponent
+
+    // Win only when NOT both ends blocked by opponent
+    if (!(headBlocked && tailBlocked)) return cells
   }
   return null
 }
