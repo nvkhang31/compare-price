@@ -843,6 +843,12 @@ body.dark .stat-card:hover::after    { opacity: 0.50; }
   box-shadow: 0 0 8px rgba(251,191,36,0.95), 0 0 22px rgba(251,191,36,0.5) !important;
   animation: caro-win-pulse 0.68s ease-in-out infinite alternate !important;
 }
+.caro-stone--preview {
+  opacity: 0.42;
+  animation: none !important;
+  box-shadow: none !important;
+}
+
 .caro-stone--last::after {
   content: '';
   position: absolute;
