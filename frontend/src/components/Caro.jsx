@@ -3,8 +3,9 @@ import { ArrowLeft, Flag, RotateCcw, Copy, Check, WifiOff } from 'lucide-react'
 import { io } from 'socket.io-client'
 
 const ROWS = 20, COLS = 20
-// Empty string → socket.io connects to same origin; Vite proxies /socket.io → localhost:5000
-const SOCKET_URL = ''
+// Local: empty string → Vite proxies /socket.io → localhost:5000
+// Production: set VITE_SOCKET_URL to backend URL (e.g. https://compare-price-lel6.onrender.com)
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || ''
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null))
