@@ -228,6 +228,22 @@ body.dark .border-sky-100            { border-color: rgba(14, 165, 233, 0.2); }
 body.dark .border-orange-100         { border-color: rgba(249, 115, 22, 0.2); }
 body.dark .border-pink-100           { border-color: rgba(236, 72, 153, 0.2); }
 
+/* Scrollbar — uses CSS vars so it adapts to light/dark automatically */
+.scroll-card {
+  background: var(--card);
+  scrollbar-color: var(--bd2) var(--card);
+  scrollbar-width: thin;
+}
+.scroll-card::-webkit-scrollbar        { width: 8px; height: 8px; }
+.scroll-card::-webkit-scrollbar-track  { background: var(--card); }
+.scroll-card::-webkit-scrollbar-thumb  { background: var(--bd2); border-radius: 4px; }
+.scroll-card::-webkit-scrollbar-corner { background: var(--card); }
+/* Dark-mode hard overrides in case var() doesn't resolve in scrollbar context */
+body.dark .scroll-card                           { color-scheme: dark; }
+body.dark .scroll-card::-webkit-scrollbar-track  { background: #161b22; }
+body.dark .scroll-card::-webkit-scrollbar-thumb  { background: #2a323d; }
+body.dark .scroll-card::-webkit-scrollbar-corner { background: #161b22; }
+
 /* Inputs */
 body.dark input:not([type='checkbox']):not([type='radio']),
 body.dark select {
@@ -410,6 +426,116 @@ body.dark .stat-card:hover::after    { opacity: 0.50; }
 
 .nav-lang-seg { color: var(--nav-ctrl-t); }
 .nav-ctrl-btn:hover .nav-lang-seg { color: var(--nav-ctrl-hover-t); }
+
+/* ─── Language Flip Toggle ────────────────────────────────── */
+@keyframes lang-flip-out {
+  from { transform: rotateY(0deg);   opacity: 1; }
+  to   { transform: rotateY(90deg);  opacity: 0; }
+}
+@keyframes lang-flip-in {
+  from { transform: rotateY(-90deg); opacity: 0; }
+  to   { transform: rotateY(0deg);   opacity: 1; }
+}
+
+.lang-flip-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-radius: 0.5rem;
+  background: var(--nav-ctrl-bg);
+  border: 1px solid var(--nav-ctrl-bd);
+  color: var(--nav-ctrl-t);
+  cursor: pointer;
+  user-select: none;
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  min-width: 2.75rem;
+}
+.lang-flip-card:hover {
+  background: var(--nav-ctrl-hover-bg);
+  color: var(--nav-ctrl-hover-t);
+  border-color: var(--nav-ctrl-bd);
+}
+.lang-flip-card--out { animation: lang-flip-out 0.14s ease-in  forwards; }
+.lang-flip-card--in  { animation: lang-flip-in  0.14s ease-out forwards; }
+
+/* ─── Filter Pill Chips ───────────────────────────────────── */
+.filter-pill-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--t-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--bd2);
+  background: transparent;
+  color: var(--t-mid);
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease,
+              box-shadow 0.16s ease, transform 0.1s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+.filter-pill:hover:not(.filter-pill--active) {
+  background: var(--bd);
+  color: var(--t-body);
+}
+.filter-pill:active { transform: scale(0.94); }
+.filter-pill--active {
+  border-color: transparent;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+.filter-pill-sep {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--bd2);
+  flex-shrink: 0;
+}
+
+/* ─── Sticky Glass Filter Bar ────────────────────────────── */
+.filter-glass {
+  position: sticky;
+  top: 60px;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px) saturate(1.8);
+  -webkit-backdrop-filter: blur(14px) saturate(1.8);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(229, 231, 235, 0.7);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 0.875rem 1rem;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+body.dark .filter-glass {
+  background: rgba(22, 27, 34, 0.82);
+  border-color: rgba(35, 42, 51, 0.7);
+}
+.filter-glass--scrolled {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.09), 0 1px 4px rgba(0, 0, 0, 0.05);
+  border-color: rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.93);
+}
+body.dark .filter-glass--scrolled {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.42), 0 1px 4px rgba(0, 0, 0, 0.25);
+  border-color: rgba(42, 50, 61, 0.95);
+  background: rgba(22, 27, 34, 0.93);
+}
 
 /* ─── Sync Button ─────────────────────────────────────────── */
 .sync-btn {

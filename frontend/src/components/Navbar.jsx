@@ -39,32 +39,30 @@ function ThemeToggle() {
 function LangToggle() {
   const { i18n } = useTranslation()
   const isVI = i18n.language === 'vi'
+  const [phase, setPhase] = useState(null)
 
   const toggle = () => {
-    const next = isVI ? 'en' : 'vi'
-    i18n.changeLanguage(next)
-    localStorage.setItem('lang', next)
+    if (phase) return
+    setPhase('out')
+    setTimeout(() => {
+      const next = isVI ? 'en' : 'vi'
+      i18n.changeLanguage(next)
+      localStorage.setItem('lang', next)
+      setPhase('in')
+    }, 140)
+    setTimeout(() => setPhase(null), 280)
   }
 
   return (
-    <button
-      onClick={toggle}
-      className="flex items-center gap-0.5 rounded-lg overflow-hidden nav-ctrl-btn"
-      title={isVI ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
-    >
-      <span className={isVI
-        ? 'px-2 py-1.5 text-xs font-semibold tracking-wide bg-blue-600 text-white'
-        : 'px-2 py-1.5 text-xs font-semibold tracking-wide nav-lang-seg'
-      }>
-        VIE
-      </span>
-      <span className={!isVI
-        ? 'px-2 py-1.5 text-xs font-semibold tracking-wide bg-blue-600 text-white'
-        : 'px-2 py-1.5 text-xs font-semibold tracking-wide nav-lang-seg'
-      }>
-        ENG
-      </span>
-    </button>
+    <div style={{ perspective: '400px' }}>
+      <button
+        onClick={toggle}
+        className={`lang-flip-card${phase ? ` lang-flip-card--${phase}` : ''}`}
+        title={isVI ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+      >
+        {isVI ? 'VIE' : 'ENG'}
+      </button>
+    </div>
   )
 }
 
