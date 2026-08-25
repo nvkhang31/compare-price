@@ -404,6 +404,13 @@ export default function Alerts() {
   const [modalLoading, setModalLoading] = useState(false)
   const [toast, setToast] = useState(null)
   const showToast = useCallback((msg) => setToast(msg), [])
+  const [filterScrolled, setFilterScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setFilterScrolled(window.scrollY > 80)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -509,45 +516,67 @@ export default function Alerts() {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div style={{ color: 'var(--t-faint)' }} className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide">
-            <SlidersHorizontal size={12} strokeWidth={2} />
+      <div className={`filter-glass${filterScrolled ? ' filter-glass--scrolled' : ''}`}>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+
+          <div className="flex items-center gap-1.5 filter-pill-label">
+            <SlidersHorizontal size={11} strokeWidth={2.5} />
             {t('alerts.filter')}
           </div>
 
-          <Select
-            value={filters.status}
-            onChange={v => setFilters(f => ({ ...f, status: v }))}
-            placeholder={t('alerts.allStatus')}
-            className="w-44"
-          >
-            <SelectOption value="">{t('alerts.allStatus')}</SelectOption>
-            <SelectOption value="open">{t('alerts.statusOpen')}</SelectOption>
-            <SelectOption value="acknowledged">{t('alerts.statusAcknowledged')}</SelectOption>
-            <SelectOption value="resolved">{t('alerts.statusResolved')}</SelectOption>
-          </Select>
+          <div className="filter-pill-sep" />
 
-          <Select
-            value={filters.severity}
-            onChange={v => setFilters(f => ({ ...f, severity: v }))}
-            placeholder={t('alerts.allSeverity')}
-            className="w-40"
-          >
-            <SelectOption value="">{t('alerts.allSeverity')}</SelectOption>
-            <SelectOption value="critical">{t('alerts.severityCritical')}</SelectOption>
-            <SelectOption value="warning">{t('alerts.severityWarning')}</SelectOption>
-            <SelectOption value="info">{t('alerts.severityInfo')}</SelectOption>
-          </Select>
+          {/* Status pills */}
+          <div className="flex items-center gap-1.5">
+            <span className="filter-pill-label">{t('alerts.status') ?? 'Status'}</span>
+            {[
+              { v: '',             label: t('alerts.allStatus'),          bg: 'var(--tint-blue)',   color: 'var(--blue)',         bd: 'rgba(88,166,255,0.25)'  },
+              { v: 'open',         label: t('alerts.statusOpen'),         bg: 'var(--tint-blue)',   color: 'var(--blue)',         bd: 'rgba(88,166,255,0.25)'  },
+              { v: 'acknowledged', label: t('alerts.statusAcknowledged'), bg: 'var(--tint-amber)',  color: 'var(--amber-strong)', bd: 'rgba(234,179,8,0.25)'   },
+              { v: 'resolved',     label: t('alerts.statusResolved'),     bg: 'var(--tint-green)',  color: 'var(--green-strong)', bd: 'rgba(34,197,94,0.25)'   },
+            ].map(({ v, label, bg, color, bd }) => {
+              const active = filters.status === v
+              return (
+                <button key={v} className={`filter-pill${active ? ' filter-pill--active' : ''}`}
+                  style={active ? { background: bg, color, borderColor: bd } : {}}
+                  onClick={() => setFilters(f => ({ ...f, status: v }))}
+                >{label}</button>
+              )
+            })}
+          </div>
 
+          <div className="filter-pill-sep" />
+
+          {/* Severity pills */}
+          <div className="flex items-center gap-1.5">
+            <span className="filter-pill-label">{t('alerts.severity') ?? 'Severity'}</span>
+            {[
+              { v: '',         label: t('alerts.allSeverity'),      bg: 'var(--tint-blue)',   color: 'var(--blue)',         bd: 'rgba(88,166,255,0.25)'  },
+              { v: 'critical', label: t('alerts.severityCritical'), bg: 'var(--tint-red)',    color: 'var(--red-strong)',   bd: 'rgba(248,113,113,0.25)' },
+              { v: 'warning',  label: t('alerts.severityWarning'),  bg: 'var(--tint-amber)',  color: 'var(--amber-strong)', bd: 'rgba(234,179,8,0.25)'   },
+              { v: 'info',     label: t('alerts.severityInfo'),     bg: 'var(--tint-blue)',   color: 'var(--blue)',         bd: 'rgba(88,166,255,0.25)'  },
+            ].map(({ v, label, bg, color, bd }) => {
+              const active = filters.severity === v
+              return (
+                <button key={v} className={`filter-pill${active ? ' filter-pill--active' : ''}`}
+                  style={active ? { background: bg, color, borderColor: bd } : {}}
+                  onClick={() => setFilters(f => ({ ...f, severity: v }))}
+                >{label}</button>
+              )
+            })}
+          </div>
+
+          <div className="filter-pill-sep" />
+
+          {/* Symbol search */}
           <div className="relative">
-            <Search size={13} style={{ color: 'var(--t-faint)' }} className="absolute left-2.5 top-1/2 -translate-y-1/2" strokeWidth={2} />
+            <Search size={12} style={{ color: 'var(--t-faint)' }} className="absolute left-2.5 top-1/2 -translate-y-1/2" strokeWidth={2} />
             <input
               type="text"
               placeholder={t('alerts.searchSymbol')}
               value={filters.symbol}
               onChange={e => setFilters(f => ({ ...f, symbol: e.target.value }))}
-              className="border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 text-sm w-32 bg-gray-50 focus:bg-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+              className="border border-gray-200 rounded-full pl-7 pr-3 py-1 text-xs w-32 bg-gray-50 focus:bg-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
             />
           </div>
         </div>

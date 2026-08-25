@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
@@ -157,6 +157,13 @@ export default function Comparisons() {
     exchange:       ''
   })
   const [symbolInput, setSymbolInput] = useState('')
+  const [filterScrolled, setFilterScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setFilterScrolled(window.scrollY > 80)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Debounce symbol search 300ms
   useEffect(() => {
@@ -224,63 +231,78 @@ export default function Comparisons() {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium uppercase tracking-wide">
-            <SlidersHorizontal size={12} strokeWidth={2} />
+      <div className={`filter-glass${filterScrolled ? ' filter-glass--scrolled' : ''}`}>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+
+          {/* Label */}
+          <div className="flex items-center gap-1.5 filter-pill-label">
+            <SlidersHorizontal size={11} strokeWidth={2.5} />
             {t('comparisons.filter')}
           </div>
 
-          <DateInput
-            value={filters.date}
-            onChange={e => setFilters(f => ({ ...f, date: e.target.value }))}
-            className="w-36"
-          />
+          <div className="filter-pill-sep" />
 
+          {/* Status pills */}
+          <div className="flex items-center gap-1.5">
+            <span className="filter-pill-label">{t('comparisons.status') ?? 'Status'}</span>
+            {[
+              { v: '',      label: t('comparisons.all'),         bg: 'var(--tint-blue)',  color: 'var(--blue)',         bd: 'rgba(88,166,255,0.25)'  },
+              { v: 'false', label: t('comparisons.match'),       bg: 'var(--tint-green)', color: 'var(--green-strong)', bd: 'rgba(34,197,94,0.25)'   },
+              { v: 'true',  label: t('comparisons.discrepancy'), bg: 'var(--tint-red)',   color: 'var(--red-strong)',   bd: 'rgba(248,113,113,0.25)' },
+            ].map(({ v, label, bg, color, bd }) => {
+              const active = filters.hasDiscrepancy === v
+              return (
+                <button key={v} className={`filter-pill${active ? ' filter-pill--active' : ''}`}
+                  style={active ? { background: bg, color, borderColor: bd } : {}}
+                  onClick={() => setFilters(f => ({ ...f, hasDiscrepancy: v }))}
+                >{label}</button>
+              )
+            })}
+          </div>
+
+          <div className="filter-pill-sep" />
+
+          {/* Exchange pills */}
+          <div className="flex items-center gap-1.5">
+            <span className="filter-pill-label">{t('comparisons.exchange') ?? 'Exchange'}</span>
+            {['', 'HOSE', 'HNX', 'UPCOM', 'VN30'].map(v => {
+              const active = filters.exchange === v
+              return (
+                <button key={v} className={`filter-pill${active ? ' filter-pill--active' : ''}`}
+                  style={active ? { background: 'var(--tint-blue)', color: 'var(--blue)', borderColor: 'rgba(88,166,255,0.25)' } : {}}
+                  onClick={() => setFilters(f => ({ ...f, exchange: v }))}
+                >{v || t('comparisons.allExchanges')}</button>
+              )
+            })}
+          </div>
+
+          <div className="filter-pill-sep" />
+
+          {/* Symbol search */}
           <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" strokeWidth={2} />
             <input
               type="text"
               placeholder={t('comparisons.searchSymbol')}
               value={symbolInput}
               onChange={e => setSymbolInput(e.target.value)}
-              className="border border-gray-200 rounded-lg pl-7 pr-3 py-1.5 text-sm w-40 bg-gray-50 focus:bg-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+              className="border border-gray-200 rounded-full pl-7 pr-3 py-1 text-xs w-36 bg-gray-50 focus:bg-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
             />
           </div>
 
-          <Select
-            value={filters.hasDiscrepancy}
-            onChange={v => setFilters(f => ({ ...f, hasDiscrepancy: v }))}
-            placeholder={t('comparisons.all')}
-            className="w-32"
-          >
-            <SelectOption value="">{t('comparisons.all')}</SelectOption>
-            <SelectOption value="true">{t('comparisons.discrepancy')}</SelectOption>
-            <SelectOption value="false">{t('comparisons.match')}</SelectOption>
-          </Select>
+          {/* Date */}
+          <DateInput value={filters.date} onChange={e => setFilters(f => ({ ...f, date: e.target.value }))} className="w-34" />
 
-          <Select
-            value={filters.exchange}
-            onChange={v => setFilters(f => ({ ...f, exchange: v }))}
-            placeholder={t('comparisons.allExchanges')}
-            className="w-36"
-          >
-            <SelectOption value="">{t('comparisons.allExchanges')}</SelectOption>
-            <SelectOption value="HOSE">HOSE</SelectOption>
-            <SelectOption value="HNX">HNX</SelectOption>
-            <SelectOption value="UPCOM">UPCOM</SelectOption>
-            <SelectOption value="VN30">VN30</SelectOption>
-          </Select>
-
-          <span className="ml-auto text-sm text-gray-400">
-            {loading ? '...' : <><strong className="text-gray-700">{total.toLocaleString()}</strong> {t('comparisons.results', { count: '' }).trim()}</>}
+          {/* Results */}
+          <span className="ml-auto text-sm" style={{ color: 'var(--t-faint)' }}>
+            {loading ? '…' : <><strong style={{ color: 'var(--t-body)' }}>{total.toLocaleString()}</strong> {t('comparisons.results', { count: '' }).trim()}</>}
           </span>
         </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+        <div className="scroll-card overflow-x-auto max-h-[600px] overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="flex flex-col items-center gap-3 text-gray-400">

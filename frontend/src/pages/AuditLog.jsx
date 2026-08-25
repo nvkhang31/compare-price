@@ -200,6 +200,13 @@ export default function AuditLog() {
   const [page,    setPage]    = useState(1)
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ action: '', status: '' })
+  const [filterScrolled, setFilterScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setFilterScrolled(window.scrollY > 80)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -245,41 +252,58 @@ export default function AuditLog() {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div style={{ color: 'var(--t-faint)' }} className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide">
-            <SlidersHorizontal size={12} strokeWidth={2} />
+      <div className={`filter-glass${filterScrolled ? ' filter-glass--scrolled' : ''}`}>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+
+          <div className="flex items-center gap-1.5 filter-pill-label">
+            <SlidersHorizontal size={11} strokeWidth={2.5} />
             {t('audit.filter')}
           </div>
-          <Select
-            value={filters.action}
-            onChange={v => setFilters(f => ({ ...f, action: v }))}
-            placeholder={t('audit.allActions')}
-            className="w-52"
-          >
-            <SelectOption value="">{t('audit.allActions')}</SelectOption>
-            {Object.entries(ACTION_CONFIG).map(([k, v]) => (
-              <SelectOption key={k} value={k}>{t(v.labelKey)}</SelectOption>
-            ))}
-          </Select>
 
-          <Select
-            value={filters.status}
-            onChange={v => setFilters(f => ({ ...f, status: v }))}
-            placeholder={t('audit.allStatus')}
-            className="w-44"
-          >
-            <SelectOption value="">{t('audit.allStatus')}</SelectOption>
-            <SelectOption value="success">{t('audit.statusSuccess')}</SelectOption>
-            <SelectOption value="partial">{t('audit.statusPartial')}</SelectOption>
-            <SelectOption value="failed">{t('audit.statusFailed')}</SelectOption>
-          </Select>
+          <div className="filter-pill-sep" />
+
+          {/* Action — keep dropdown (9 options) */}
+          <div className="flex items-center gap-1.5">
+            <span className="filter-pill-label">{t('audit.action') ?? 'Action'}</span>
+            <Select
+              value={filters.action}
+              onChange={v => setFilters(f => ({ ...f, action: v }))}
+              placeholder={t('audit.allActions')}
+              className="w-52"
+            >
+              <SelectOption value="">{t('audit.allActions')}</SelectOption>
+              {Object.entries(ACTION_CONFIG).map(([k, v]) => (
+                <SelectOption key={k} value={k}>{t(v.labelKey)}</SelectOption>
+              ))}
+            </Select>
+          </div>
+
+          <div className="filter-pill-sep" />
+
+          {/* Status pills */}
+          <div className="flex items-center gap-1.5">
+            <span className="filter-pill-label">{t('audit.status') ?? 'Status'}</span>
+            {[
+              { v: '',         label: t('audit.allStatus'),      bg: 'var(--tint-blue)',   color: 'var(--blue)',         bd: 'rgba(88,166,255,0.25)'  },
+              { v: 'success',  label: t('audit.statusSuccess'),  bg: 'var(--tint-green)',  color: 'var(--green-strong)', bd: 'rgba(34,197,94,0.25)'   },
+              { v: 'partial',  label: t('audit.statusPartial'),  bg: 'var(--tint-amber)',  color: 'var(--amber-strong)', bd: 'rgba(234,179,8,0.25)'   },
+              { v: 'failed',   label: t('audit.statusFailed'),   bg: 'var(--tint-red)',    color: 'var(--red-strong)',   bd: 'rgba(248,113,113,0.25)' },
+            ].map(({ v, label, bg, color, bd }) => {
+              const active = filters.status === v
+              return (
+                <button key={v} className={`filter-pill${active ? ' filter-pill--active' : ''}`}
+                  style={active ? { background: bg, color, borderColor: bd } : {}}
+                  onClick={() => setFilters(f => ({ ...f, status: v }))}
+                >{label}</button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto max-h-[620px] overflow-y-auto">
+        <div className="scroll-card overflow-x-auto max-h-[620px] overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div style={{ color: 'var(--t-faint)' }} className="flex flex-col items-center gap-3">
