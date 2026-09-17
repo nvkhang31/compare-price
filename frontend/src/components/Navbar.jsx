@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -102,7 +102,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-15">
 
           {/* Logo */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0" style={{ textDecoration: 'none' }}>
             <div className="logo-ring">
               <div className="logo-ring-inner">
                 <svg width="16" height="11" viewBox="0 0 20 14" fill="none">
@@ -120,7 +120,7 @@ export default function Navbar() {
               <p style={{ color: 'var(--nav-logo-t)' }} className="font-semibold text-sm tracking-wide">KIS Price Tool</p>
               <p style={{ color: 'var(--nav-logo-sub)' }} className="text-[10px]">Price Comparison</p>
             </div>
-          </div>
+          </Link>
 
           {/* Nav links — pill container */}
           <div className="nav-pill-wrap">
