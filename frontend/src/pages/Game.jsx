@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Gamepad2, Lightbulb } from 'lucide-react'
 import BullBear from '../components/BullBear'
 import Snake from '../components/Snake'
@@ -169,6 +169,137 @@ function CaroPreview() {
   )
 }
 
+// ── Particle canvas background ───────────────────────────────
+
+const PARTICLE_COLORS = [
+  'rgba(129,140,248,0.75)',  // indigo
+  'rgba(192,132,252,0.75)',  // violet
+  'rgba(56,189,248,0.65)',   // cyan
+]
+
+function useParticleBackground() {
+  const canvasRef = useRef(null)
+  const mouseRef  = useRef({ x: null, y: null, radius: 120 })
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    let raf
+    let particles = []
+
+    class Particle {
+      constructor() {
+        this.reset(canvas.width, canvas.height)
+      }
+      reset(w, h) {
+        this.size = Math.random() * 1.8 + 0.6
+        this.x = Math.random() * w
+        this.y = Math.random() * h
+        this.vx = (Math.random() - 0.5) * 0.35
+        this.vy = (Math.random() - 0.5) * 0.35
+        this.color = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)]
+      }
+      update(w, h) {
+        const m = mouseRef.current
+        if (m.x !== null) {
+          const dx = m.x - this.x
+          const dy = m.y - this.y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist < m.radius + this.size) {
+            const force = (m.radius - dist) / m.radius
+            this.x -= (dx / dist) * force * 4
+            this.y -= (dy / dist) * force * 4
+          }
+        }
+        this.x += this.vx
+        this.y += this.vy
+        if (this.x < 0 || this.x > w) this.vx *= -1
+        if (this.y < 0 || this.y > h) this.vy *= -1
+      }
+      draw() {
+        ctx.beginPath()
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+        ctx.fillStyle = this.color
+        ctx.fill()
+      }
+    }
+
+    const init = () => {
+      const count = Math.floor((canvas.width * canvas.height) / 10000)
+      particles = Array.from({ length: count }, () => new Particle())
+    }
+
+    const connect = () => {
+      const m = mouseRef.current
+      const threshold = (canvas.width / 6) * (canvas.height / 6)
+      for (let a = 0; a < particles.length; a++) {
+        for (let b = a + 1; b < particles.length; b++) {
+          const dx = particles[a].x - particles[b].x
+          const dy = particles[a].y - particles[b].y
+          const distSq = dx * dx + dy * dy
+          if (distSq < threshold) {
+            const opacity = 1 - distSq / threshold
+            const nearMouse = m.x !== null && (() => {
+              const mx = particles[a].x - m.x
+              const my = particles[a].y - m.y
+              return Math.sqrt(mx * mx + my * my) < m.radius
+            })()
+            ctx.strokeStyle = nearMouse
+              ? `rgba(255,255,255,${opacity * 0.6})`
+              : `rgba(165,120,255,${opacity * 0.35})`
+            ctx.lineWidth = 0.8
+            ctx.beginPath()
+            ctx.moveTo(particles[a].x, particles[a].y)
+            ctx.lineTo(particles[b].x, particles[b].y)
+            ctx.stroke()
+          }
+        }
+      }
+    }
+
+    const resize = () => {
+      canvas.width  = window.innerWidth
+      canvas.height = window.innerHeight
+      init()
+    }
+
+    const onMouseMove = e => {
+      const rect = canvas.getBoundingClientRect()
+      mouseRef.current.x = e.clientX - rect.left
+      mouseRef.current.y = e.clientY - rect.top
+    }
+    const onMouseLeave = () => {
+      mouseRef.current.x = null
+      mouseRef.current.y = null
+    }
+
+    resize()
+    window.addEventListener('resize', resize)
+    // Listen on parent so cards don't block mouse tracking
+    const container = canvas.parentElement
+    container.addEventListener('mousemove', onMouseMove)
+    container.addEventListener('mouseleave', onMouseLeave)
+
+    const animate = () => {
+      raf = requestAnimationFrame(animate)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      particles.forEach(p => { p.update(canvas.width, canvas.height); p.draw() })
+      connect()
+    }
+    animate()
+
+    return () => {
+      window.removeEventListener('resize', resize)
+      container.removeEventListener('mousemove', onMouseMove)
+      container.removeEventListener('mouseleave', onMouseLeave)
+      cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  return canvasRef
+}
+
 // ── Game config ──────────────────────────────────────────────
 
 const GAMES = [
@@ -240,19 +371,24 @@ const GAMES = [
 
 // ── Page ─────────────────────────────────────────────────────
 
-export default function Game() {
-  const [selected, setSelected] = useState(null)
-
-  if (selected === 'bullbear') return <BullBear onBack={() => setSelected(null)} />
-  if (selected === 'snake')    return <Snake    onBack={() => setSelected(null)} />
-  if (selected === 'sudoku')   return <Sudoku   onBack={() => setSelected(null)} />
-  if (selected === 'caro')     return <Caro     onBack={() => setSelected(null)} />
+function GameLobby({ onSelect }) {
+  const canvasRef = useParticleBackground()
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8">
+    <div className="relative flex flex-col items-center justify-center min-h-screen gap-8 overflow-hidden">
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        style={{
+          position: 'fixed', inset: 0,
+          width: '100vw', height: '100vh',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
 
       {/* ── Arcade header ── */}
-      <div className="flex flex-col items-center gap-3">
+      <div className="relative z-10 flex flex-col items-center gap-3">
         <div className="relative">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{
@@ -282,14 +418,14 @@ export default function Game() {
       </div>
 
       {/* ── Game cards ── */}
-      <div className="flex flex-col gap-3 w-full max-w-md">
+      <div className="relative z-10 flex flex-col gap-3 w-full max-w-md">
         {GAMES.map(g => {
           const best = g.lsKey ? parseInt(localStorage.getItem(g.lsKey) ?? '0') : 0
           const Preview = g.preview
           return (
             <button
               key={g.id}
-              onClick={() => setSelected(g.id)}
+              onClick={() => onSelect(g.id)}
               className="game-picker-card flex items-stretch overflow-hidden rounded-2xl active:scale-[0.97] text-left h-[104px]"
               style={{
                 background: g.gradient,
@@ -339,4 +475,15 @@ export default function Game() {
 
     </div>
   )
+}
+
+export default function Game() {
+  const [selected, setSelected] = useState(null)
+
+  if (selected === 'bullbear') return <BullBear onBack={() => setSelected(null)} />
+  if (selected === 'snake')    return <Snake    onBack={() => setSelected(null)} />
+  if (selected === 'sudoku')   return <Sudoku   onBack={() => setSelected(null)} />
+  if (selected === 'caro')     return <Caro     onBack={() => setSelected(null)} />
+
+  return <GameLobby onSelect={setSelected} />
 }
